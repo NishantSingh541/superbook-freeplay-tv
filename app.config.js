@@ -70,6 +70,7 @@ const buildPlugins = () => [
   ],
   "./plugins/withSoundAssets",
   "./plugins/withTVManifestFixes",
+  "./plugins/withCbnNetworkSecurityConfig",
   "./plugins/withReleaseSigning"
 ];
 
