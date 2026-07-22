@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Prossimamente",
+    "connected": "Connesso",
+    "version": "Versione: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Immagine",
+      "video": "Video"
+    },
+    "header": "Sfoglia contenuti",
+    "noContent": "Nessun contenuto disponibile",
+    "tryDifferentFolder": "Prova a navigare in una cartella diversa"
+  },
+  "downloads": {
+    "header": "Download",
+    "noDownloads": "Ancora nessun download"
+  },
+  "menu": {
+    "back": "Indietro"
+  },
+  "message": {
+    "loadingImage": "Caricamento immagine...",
+    "loadingVideo": "Caricamento video...",
+    "playbackFailed": "Riproduzione non riuscita",
+    "playbackFailedSub": "Premi indietro per tornare",
+    "skippingNext": "Passaggio al prossimo elemento...",
+    "videoFailed": "Caricamento video non riuscito"
+  },
+  "nav": {
+    "downloads": "Download",
+    "plan": "Piano di Oggi",
+    "providers": "Fornitori"
+  },
+  "offline": {
+    "canPlayDownloaded": "Puoi comunque riprodurre la lezione che è stata scaricata in anticipo.",
+    "notDownloaded": "Sfortunatamente la lezione non è ancora stata scaricata per la riproduzione offline.  Controlla la connessione e riprova.",
+    "start": "Avvia",
+    "subtitle": "L'accesso a Internet non è attualmente disponibile",
+    "title": "Offline:"
+  },
+  "planDownload": {
+    "downloadingItem": "Download elemento {{current}} di {{total}}",
+    "fallbackName": "Piano del servizio",
+    "loadFailed": "Impossibile caricare il piano.",
+    "loadFailedSub": "Assicurati che sia programmato un piano per questo tipo di piano.",
+    "startPlan": "Avvia piano",
+    "tryAgain": "Riprova"
+  },
+  "planPairing": {
+    "connected": "Connesso!",
+    "generateFailed": "Generazione del codice di abbinamento non riuscita. Riprova.",
+    "generating": "Generazione del codice di abbinamento...",
+    "instructions": "Inserisci questo codice nella sezione Tipo di piano di B1Admin",
+    "loadingPlan": "Caricamento del tuo piano...",
+    "regenerate": "Genera Nuovo Codice",
+    "secondary": "Ci connetteremo automaticamente una volta accettato",
+    "tryAgain": "Riprova",
+    "waiting": "In attesa di connessione"
+  },
+  "privacyPolicy": {
+    "header": "Informativa sulla privacy",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "Per visualizzare la nostra informativa sulla privacy completa, visita:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Autenticazione non riuscita o negata.",
+    "cancel": "Annulla",
+    "codeExpired": "Codice di autenticazione scaduto. Riprova.",
+    "connectTo": "Connetti a {{name}}",
+    "connected": "Connesso!",
+    "enterCode": "Inserisci questo codice:",
+    "expiresIn": "Il codice scade tra {{minutes}} minuti",
+    "fallbackProvider": "Fornitore",
+    "initFailed": "Inizializzazione dell'autenticazione non riuscita. Riprova.",
+    "initializing": "Inizializzazione dell'autenticazione...",
+    "instructions": "Scansiona il codice QR con il telefono o visita",
+    "instructionsLine2": "e inserisci il codice qui sotto",
+    "loadingContent": "Caricamento dei tuoi contenuti...",
+    "providerNotFound": "Fornitore non trovato.",
+    "regenerate": "Genera Nuovo Codice",
+    "secondary": "Controlla il tuo telefono per confermare",
+    "tryAgain": "Riprova",
+    "unexpectedError": "Si è verificato un errore imprevisto. Riprova.",
+    "waiting": "In attesa di autorizzazione"
+  },
+  "providerDownload": {
+    "download": "Scarica",
+    "downloadingItem": "Download elemento {{current}} di {{total}}",
+    "fallbackTitle": "Contenuto",
+    "start": "Avvia",
+    "stream": "Trasmetti"
+  },
+  "providerFormLogin": {
+    "cancel": "Annulla",
+    "connected": "Connesso!",
+    "email": "Email",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Inserisci le tue credenziali per connetterti",
+    "fallbackProvider": "Fornitore",
+    "loadingContent": "Caricamento dei tuoi contenuti...",
+    "loggingIn": "Accesso in corso...",
+    "loginFailed": "Accesso non riuscito. Controlla le tue credenziali.",
+    "loginTo": "Accedi a {{name}}",
+    "missingCredentials": "Inserisci email e password",
+    "notSupported": "Questo fornitore non supporta l'accesso tramite modulo",
+    "password": "Password",
+    "passwordPlaceholder": "Password",
+    "providerNotFound": "Fornitore non trovato",
+    "signIn": "Accedi",
+    "unexpectedError": "Si è verificato un errore imprevisto. Riprova."
+  },
+  "providerOAuth": {
+    "cancel": "Annulla",
+    "connectTo": "Connetti a {{name}}",
+    "connected": "Connesso!",
+    "connecting": "Connessione in corso...",
+    "exchangeFailed": "Scambio del codice di autorizzazione con i token non riuscito.",
+    "expiresIn": "La sessione scade tra {{minutes}} minuti",
+    "fallbackProvider": "Fornitore",
+    "initializing": "Inizializzazione dell'autenticazione...",
+    "instructionsLine1": "Scansiona il codice QR con il telefono per autorizzare l'accesso.",
+    "instructionsLine2": "La tua TV si connetterà automaticamente una volta approvato.",
+    "loadingContent": "Caricamento dei tuoi contenuti...",
+    "providerNotFound": "Fornitore non trovato.",
+    "secondary": "Controlla il tuo telefono per confermare",
+    "sessionExpired": "Sessione di autorizzazione scaduta. Riprova.",
+    "sessionFailed": "Creazione della sessione di autorizzazione non riuscita. Riprova.",
+    "tokenExchangeFailed": "Scambio dei token non riuscito. Riprova.",
+    "tryAgain": "Riprova",
+    "unexpectedError": "Si è verificato un errore imprevisto. Riprova.",
+    "waiting": "In attesa di autorizzazione"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Usa questo provider come fonte della lezione di oggi e precarica i file",
+      "label": "Scarica Automaticamente la Lezione di Oggi"
+    },
+    "disconnect": "Disconnetti",
+    "header": "Impostazioni Provider",
+    "library": {
+      "description": "Mostra la libreria di contenuti di questo provider nel menu",
+      "label": "Sfoglia Libreria"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} non è ancora disponibile.",
+      "title": "Prossimamente"
+    },
+    "errorAlert": {
+      "providerNotFound": "Fornitore {{name}} non trovato.",
+      "title": "Errore"
+    },
+    "header": "Fornitori di contenuti",
+    "notSupported": {
+      "message": "L'autenticazione di {{name}} non è ancora supportata.",
+      "title": "Non supportato"
+    }
+  },
+  "selectMessage": {
+    "header": "Seleziona un messaggio",
+    "nowPlaying": "IN RIPRODUZIONE ORA"
+  },
+  "splash": {
+    "connecting": "Connessione in corso..."
+  }
+}

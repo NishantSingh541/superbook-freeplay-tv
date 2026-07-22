@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Netrukus",
+    "connected": "Prisijungta",
+    "version": "Versija: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Paveikslėlis",
+      "video": "Vaizdo įrašas"
+    },
+    "header": "Naršyti turinį",
+    "noContent": "Turinys neprieinamas",
+    "tryDifferentFolder": "Pabandykite pereiti į kitą aplanką"
+  },
+  "downloads": {
+    "header": "Atsisiuntimai",
+    "noDownloads": "Atsisiuntimų dar nėra"
+  },
+  "menu": {
+    "back": "Atgal"
+  },
+  "message": {
+    "loadingImage": "Kraunamas vaizdas...",
+    "loadingVideo": "Įkeliamas vaizdo įrašas...",
+    "playbackFailed": "Atkūrimas nepavyko",
+    "playbackFailedSub": "Paspauskite atgal, kad grįžtumėte",
+    "skippingNext": "Praleidžiama į kitą elementą...",
+    "videoFailed": "Nepavyko įkelti vaizdo įrašo"
+  },
+  "nav": {
+    "downloads": "Atsisiuntimai",
+    "plan": "Šiandienos Planas",
+    "providers": "Tiekėjai"
+  },
+  "offline": {
+    "canPlayDownloaded": "Vis tiek galite atkurti pamoką, kuri buvo atsisiųsta iš anksto.",
+    "notDownloaded": "Deja, pamoka dar nebuvo atsisiųsta atkūrimui neprisijungus. Patikrinkite ryšį ir bandykite dar kartą.",
+    "start": "Pradėti",
+    "subtitle": "Šiuo metu interneto prieiga negalima",
+    "title": "Neprisijungus:"
+  },
+  "planDownload": {
+    "downloadingItem": "Atsisiunčiama {{current}} iš {{total}}",
+    "fallbackName": "Pamaldų planas",
+    "loadFailed": "Nepavyko įkelti plano.",
+    "loadFailedSub": "Įsitikinkite, kad šiam plano tipui suplanuotas planas.",
+    "startPlan": "Pradėti planą",
+    "tryAgain": "Bandyti dar kartą"
+  },
+  "planPairing": {
+    "connected": "Prisijungta!",
+    "generateFailed": "Nepavyko sugeneruoti susiejimo kodo. Bandykite dar kartą.",
+    "generating": "Generuojamas susiejimo kodas...",
+    "instructions": "Įveskite šį kodą B1Admin plano tipo skiltyje",
+    "loadingPlan": "Kraunamas jūsų planas...",
+    "regenerate": "Generuoti Naują Kodą",
+    "secondary": "Automatiškai prisijungsime po patvirtinimo",
+    "tryAgain": "Bandyti dar kartą",
+    "waiting": "Laukiama prisijungimo"
+  },
+  "privacyPolicy": {
+    "header": "Privatumo politika",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "Norėdami peržiūrėti visą mūsų privatumo politiką, apsilankykite:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Autentifikavimas nepavyko arba buvo atmestas.",
+    "cancel": "Atšaukti",
+    "codeExpired": "Autentifikavimo kodo galiojimas baigėsi. Bandykite dar kartą.",
+    "connectTo": "Prisijungti prie {{name}}",
+    "connected": "Prisijungta!",
+    "enterCode": "Įveskite šį kodą:",
+    "expiresIn": "Kodo galiojimas baigsis po {{minutes}} min.",
+    "fallbackProvider": "Tiekėjas",
+    "initFailed": "Nepavyko inicijuoti autentifikavimo. Bandykite dar kartą.",
+    "initializing": "Inicijuojamas autentifikavimas...",
+    "instructions": "Nuskaitykite QR kodą telefonu arba apsilankykite",
+    "instructionsLine2": "ir įveskite žemiau esantį kodą",
+    "loadingContent": "Įkeliamas turinys...",
+    "providerNotFound": "Tiekėjas nerastas.",
+    "regenerate": "Generuoti Naują Kodą",
+    "secondary": "Patikrinkite telefoną, kad patvirtintumėte",
+    "tryAgain": "Bandyti dar kartą",
+    "unexpectedError": "Įvyko netikėta klaida. Bandykite dar kartą.",
+    "waiting": "Laukiama autorizavimo"
+  },
+  "providerDownload": {
+    "download": "Atsisiųsti",
+    "downloadingItem": "Atsisiunčiama {{current}} iš {{total}}",
+    "fallbackTitle": "Turinys",
+    "start": "Pradėti",
+    "stream": "Transliuoti"
+  },
+  "providerFormLogin": {
+    "cancel": "Atšaukti",
+    "connected": "Prisijungta!",
+    "email": "El. paštas",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Įveskite prisijungimo duomenis, kad prisijungtumėte",
+    "fallbackProvider": "Tiekėjas",
+    "loadingContent": "Įkeliamas turinys...",
+    "loggingIn": "Jungiamasi...",
+    "loginFailed": "Nepavyko prisijungti. Patikrinkite savo prisijungimo duomenis.",
+    "loginTo": "Prisijungti prie {{name}}",
+    "missingCredentials": "Įveskite el. paštą ir slaptažodį",
+    "notSupported": "Šis tiekėjas nepalaiko prisijungimo per formą",
+    "password": "Slaptažodis",
+    "passwordPlaceholder": "Slaptažodis",
+    "providerNotFound": "Tiekėjas nerastas",
+    "signIn": "Prisijungti",
+    "unexpectedError": "Įvyko netikėta klaida. Bandykite dar kartą."
+  },
+  "providerOAuth": {
+    "cancel": "Atšaukti",
+    "connectTo": "Prisijungti prie {{name}}",
+    "connected": "Prisijungta!",
+    "connecting": "Jungiamasi...",
+    "exchangeFailed": "Nepavyko iškeisti autorizavimo kodo į žetonus.",
+    "expiresIn": "Sesijos galiojimas baigsis po {{minutes}} min.",
+    "fallbackProvider": "Tiekėjas",
+    "initializing": "Inicijuojamas autentifikavimas...",
+    "instructionsLine1": "Nuskaitykite QR kodą telefonu, kad autorizuotumėte prieigą.",
+    "instructionsLine2": "Jūsų televizorius automatiškai prisijungs, kai patvirtinsite.",
+    "loadingContent": "Įkeliamas turinys...",
+    "providerNotFound": "Tiekėjas nerastas.",
+    "secondary": "Patikrinkite telefoną, kad patvirtintumėte",
+    "sessionExpired": "Autorizavimo sesijos galiojimas baigėsi. Bandykite dar kartą.",
+    "sessionFailed": "Nepavyko sukurti autorizavimo sesijos. Bandykite dar kartą.",
+    "tokenExchangeFailed": "Žetonų keitimas nepavyko. Bandykite dar kartą.",
+    "tryAgain": "Bandyti dar kartą",
+    "unexpectedError": "Įvyko netikėta klaida. Bandykite dar kartą.",
+    "waiting": "Laukiama autorizavimo"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Naudokite šį teikėją kaip šiandienos pamokos šaltinį ir iš anksto atsisiųskite failus",
+      "label": "Automatiškai Atsisiųsti Šiandienos Pamoką"
+    },
+    "disconnect": "Atsijungti",
+    "header": "Teikėjo Nustatymai",
+    "library": {
+      "description": "Rodyti šio teikėjo turinio biblioteką meniu",
+      "label": "Naršyti Biblioteką"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} dar neprieinamas.",
+      "title": "Netrukus"
+    },
+    "errorAlert": {
+      "providerNotFound": "Tiekėjas {{name}} nerastas.",
+      "title": "Klaida"
+    },
+    "header": "Turinio tiekėjai",
+    "notSupported": {
+      "message": "{{name}} autentifikavimas dar nepalaikomas.",
+      "title": "Nepalaikoma"
+    }
+  },
+  "selectMessage": {
+    "header": "Pasirinkite žinutę",
+    "nowPlaying": "DABAR GROJAMA"
+  },
+  "splash": {
+    "connecting": "Jungiamasi..."
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "قريباً",
+    "connected": "متصل",
+    "version": "الإصدار: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "صورة",
+      "video": "فيديو"
+    },
+    "header": "تصفح المحتوى",
+    "noContent": "لا يوجد محتوى متاح",
+    "tryDifferentFolder": "حاول التنقل إلى مجلد مختلف"
+  },
+  "downloads": {
+    "header": "التنزيلات",
+    "noDownloads": "لا توجد تنزيلات بعد"
+  },
+  "menu": {
+    "back": "رجوع"
+  },
+  "message": {
+    "loadingImage": "جارٍ تحميل الصورة...",
+    "loadingVideo": "جاري تحميل الفيديو...",
+    "playbackFailed": "فشل التشغيل",
+    "playbackFailedSub": "اضغط رجوع للعودة",
+    "skippingNext": "جاري التخطي إلى العنصر التالي...",
+    "videoFailed": "فشل تحميل الفيديو"
+  },
+  "nav": {
+    "downloads": "التنزيلات",
+    "plan": "خطة اليوم",
+    "providers": "الموفرون"
+  },
+  "offline": {
+    "canPlayDownloaded": "لا يزال بإمكانك تشغيل الدرس الذي تم تنزيله مسبقاً.",
+    "notDownloaded": "لسوء الحظ لم يتم تنزيل الدرس للتشغيل دون اتصال بعد. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    "start": "ابدأ",
+    "subtitle": "الوصول إلى الإنترنت غير متاح حالياً",
+    "title": "غير متصل:"
+  },
+  "planDownload": {
+    "downloadingItem": "جاري تنزيل العنصر {{current}} من {{total}}",
+    "fallbackName": "خطة الخدمة",
+    "loadFailed": "تعذر تحميل الخطة.",
+    "loadFailedSub": "تأكد من جدولة خطة لنوع الخطة هذا.",
+    "startPlan": "ابدأ الخطة",
+    "tryAgain": "حاول مرة أخرى"
+  },
+  "planPairing": {
+    "connected": "متصل!",
+    "generateFailed": "فشل في إنشاء رمز الإقران. يرجى المحاولة مرة أخرى.",
+    "generating": "جاري إنشاء رمز الإقران...",
+    "instructions": "أدخل هذا الرمز في قسم نوع الخطة في B1Admin",
+    "loadingPlan": "جارٍ تحميل خطتك...",
+    "regenerate": "إنشاء رمز جديد",
+    "secondary": "سنتصل تلقائيًا بمجرد القبول",
+    "tryAgain": "حاول مرة أخرى",
+    "waiting": "في انتظار الاتصال"
+  },
+  "privacyPolicy": {
+    "header": "سياسة الخصوصية",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "لعرض سياسة الخصوصية الكاملة، يرجى زيارة:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "فشلت المصادقة أو تم رفضها.",
+    "cancel": "إلغاء",
+    "codeExpired": "انتهت صلاحية رمز المصادقة. يرجى المحاولة مرة أخرى.",
+    "connectTo": "الاتصال بـ {{name}}",
+    "connected": "متصل!",
+    "enterCode": "أدخل هذا الرمز:",
+    "expiresIn": "تنتهي صلاحية الرمز خلال {{minutes}} دقيقة",
+    "fallbackProvider": "الموفر",
+    "initFailed": "فشل في تهيئة المصادقة. يرجى المحاولة مرة أخرى.",
+    "initializing": "جاري تهيئة المصادقة...",
+    "instructions": "امسح رمز QR بهاتفك، أو قم بزيارة",
+    "instructionsLine2": "وأدخل الرمز أدناه",
+    "loadingContent": "جاري تحميل المحتوى الخاص بك...",
+    "providerNotFound": "الموفر غير موجود.",
+    "regenerate": "إنشاء رمز جديد",
+    "secondary": "تحقق من هاتفك للتأكيد",
+    "tryAgain": "حاول مرة أخرى",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    "waiting": "في انتظار التفويض"
+  },
+  "providerDownload": {
+    "download": "تنزيل",
+    "downloadingItem": "جاري تنزيل العنصر {{current}} من {{total}}",
+    "fallbackTitle": "محتوى",
+    "start": "ابدأ",
+    "stream": "بث"
+  },
+  "providerFormLogin": {
+    "cancel": "إلغاء",
+    "connected": "متصل!",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "أدخل بيانات الاعتماد الخاصة بك للاتصال",
+    "fallbackProvider": "الموفر",
+    "loadingContent": "جاري تحميل المحتوى الخاص بك...",
+    "loggingIn": "جاري تسجيل الدخول...",
+    "loginFailed": "فشل تسجيل الدخول. تحقق من بيانات الاعتماد الخاصة بك.",
+    "loginTo": "تسجيل الدخول إلى {{name}}",
+    "missingCredentials": "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+    "notSupported": "هذا الموفر لا يدعم تسجيل الدخول عبر النموذج",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "كلمة المرور",
+    "providerNotFound": "الموفر غير موجود",
+    "signIn": "تسجيل الدخول",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+  },
+  "providerOAuth": {
+    "cancel": "إلغاء",
+    "connectTo": "الاتصال بـ {{name}}",
+    "connected": "متصل!",
+    "connecting": "جاري الاتصال...",
+    "exchangeFailed": "فشل في تبادل رمز التفويض بالرموز المميزة.",
+    "expiresIn": "تنتهي الجلسة خلال {{minutes}} دقيقة",
+    "fallbackProvider": "الموفر",
+    "initializing": "جاري تهيئة المصادقة...",
+    "instructionsLine1": "امسح رمز QR بهاتفك للسماح بالوصول.",
+    "instructionsLine2": "سيتصل تلفازك تلقائياً بمجرد موافقتك.",
+    "loadingContent": "جاري تحميل المحتوى الخاص بك...",
+    "providerNotFound": "الموفر غير موجود.",
+    "secondary": "تحقق من هاتفك للتأكيد",
+    "sessionExpired": "انتهت جلسة التفويض. يرجى المحاولة مرة أخرى.",
+    "sessionFailed": "فشل في إنشاء جلسة التفويض. يرجى المحاولة مرة أخرى.",
+    "tokenExchangeFailed": "فشل تبادل الرموز المميزة. يرجى المحاولة مرة أخرى.",
+    "tryAgain": "حاول مرة أخرى",
+    "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    "waiting": "في انتظار التفويض"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "استخدم هذا المزود كمصدر لدرس اليوم وقم بتنزيل الملفات مسبقًا",
+      "label": "تنزيل درس اليوم تلقائيًا"
+    },
+    "disconnect": "قطع الاتصال",
+    "header": "إعدادات المزود",
+    "library": {
+      "description": "إظهار مكتبة محتوى هذا المزود في القائمة",
+      "label": "تصفح المكتبة"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} غير متاح بعد.",
+      "title": "قريباً"
+    },
+    "errorAlert": {
+      "providerNotFound": "الموفر {{name}} غير موجود.",
+      "title": "خطأ"
+    },
+    "header": "موفرو المحتوى",
+    "notSupported": {
+      "message": "مصادقة {{name}} غير مدعومة بعد.",
+      "title": "غير مدعوم"
+    }
+  },
+  "selectMessage": {
+    "header": "اختر رسالة",
+    "nowPlaying": "قيد التشغيل الآن"
+  },
+  "splash": {
+    "connecting": "جارٍ الاتصال..."
+  }
+}

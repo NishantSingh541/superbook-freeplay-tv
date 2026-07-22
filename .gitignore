@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native (regenerated via `expo prebuild`)
+/android
+/ios
+
+# Native builds / keys
+*.jks
+*.p12
+*.key
+*.keystore
+*.mobileprovision
+*.orig.*
+
+# Logs & OS files
+npm-debug.*
+.DS_Store
+*.pem
+
+# Env
+.env
+package-lock.json

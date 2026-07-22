@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Malapit Nang Dumating",
+    "connected": "Nakakonekta",
+    "version": "Bersyon: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Larawan",
+      "video": "Video"
+    },
+    "header": "Mag-browse ng Nilalaman",
+    "noContent": "Walang available na nilalaman",
+    "tryDifferentFolder": "Subukang mag-navigate sa ibang folder"
+  },
+  "downloads": {
+    "header": "Mga Download",
+    "noDownloads": "Wala pang mga download"
+  },
+  "menu": {
+    "back": "Bumalik"
+  },
+  "message": {
+    "loadingImage": "Naglo-load ng larawan...",
+    "loadingVideo": "Naglo-load ng video...",
+    "playbackFailed": "Nabigo ang pag-playback",
+    "playbackFailedSub": "Pindutin ang likod para bumalik",
+    "skippingNext": "Lumalaktaw sa susunod na item...",
+    "videoFailed": "Nabigong i-load ang video"
+  },
+  "nav": {
+    "downloads": "Mga Download",
+    "plan": "Plano Ngayong Araw",
+    "providers": "Mga Provider"
+  },
+  "offline": {
+    "canPlayDownloaded": "Maaari mo pa ring i-play ang aralin na na-download nang maaga.",
+    "notDownloaded": "Sa kasamaang palad, hindi pa na-download ang aralin para sa offline na pag-play. Suriin ang iyong koneksyon at subukan muli.",
+    "start": "Simulan",
+    "subtitle": "Hindi available ang access sa Internet sa kasalukuyan",
+    "title": "Offline:"
+  },
+  "planDownload": {
+    "downloadingItem": "Dina-download ang item {{current}} ng {{total}}",
+    "fallbackName": "Plano ng Serbisyo",
+    "loadFailed": "Hindi ma-load ang plano.",
+    "loadFailedSub": "Siguraduhing may planong naka-iskedyul para sa uri ng planong ito.",
+    "startPlan": "Simulan ang Plano",
+    "tryAgain": "Subukan Muli"
+  },
+  "planPairing": {
+    "connected": "Nakakonekta!",
+    "generateFailed": "Nabigong gumawa ng pairing code. Pakisubukan muli.",
+    "generating": "Gumagawa ng pairing code...",
+    "instructions": "Ilagay ang code na ito sa seksyon ng Uri ng Plano sa B1Admin",
+    "loadingPlan": "Nilo-load ang iyong plano...",
+    "regenerate": "Gumawa ng Bagong Code",
+    "secondary": "Awtomatiko kaming kokonekta kapag natanggap na",
+    "tryAgain": "Subukan Muli",
+    "waiting": "Naghihintay ng koneksyon"
+  },
+  "privacyPolicy": {
+    "header": "Patakaran sa Privacy",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "Upang tingnan ang aming buong patakaran sa privacy, mangyaring bisitahin ang:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Nabigo o tinanggihan ang authentication.",
+    "cancel": "Kanselahin",
+    "codeExpired": "Nag-expire na ang authentication code. Pakisubukan muli.",
+    "connectTo": "Kumonekta sa {{name}}",
+    "connected": "Nakakonekta!",
+    "enterCode": "Ilagay ang code na ito:",
+    "expiresIn": "Mag-e-expire ang code sa loob ng {{minutes}} minuto",
+    "fallbackProvider": "Provider",
+    "initFailed": "Nabigong simulan ang authentication. Pakisubukan muli.",
+    "initializing": "Sinisimulan ang authentication...",
+    "instructions": "I-scan ang QR code gamit ang iyong telepono, o bisitahin ang",
+    "instructionsLine2": "at ilagay ang code sa ibaba",
+    "loadingContent": "Naglo-load ng iyong nilalaman...",
+    "providerNotFound": "Hindi nahanap ang provider.",
+    "regenerate": "Gumawa ng Bagong Code",
+    "secondary": "Tingnan ang iyong telepono para kumpirmahin",
+    "tryAgain": "Subukan Muli",
+    "unexpectedError": "Naganap ang hindi inaasahang error. Pakisubukan muli.",
+    "waiting": "Naghihintay ng awtorisasyon"
+  },
+  "providerDownload": {
+    "download": "I-download",
+    "downloadingItem": "Dina-download ang item {{current}} ng {{total}}",
+    "fallbackTitle": "Nilalaman",
+    "start": "Simulan",
+    "stream": "I-stream"
+  },
+  "providerFormLogin": {
+    "cancel": "Kanselahin",
+    "connected": "Nakakonekta!",
+    "email": "Email",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Ilagay ang iyong mga kredensyal upang kumonekta",
+    "fallbackProvider": "Provider",
+    "loadingContent": "Naglo-load ng iyong nilalaman...",
+    "loggingIn": "Naglo-log in...",
+    "loginFailed": "Nabigo ang pag-login. Suriin ang iyong mga kredensyal.",
+    "loginTo": "Mag-log in sa {{name}}",
+    "missingCredentials": "Pakilagay ang email at password",
+    "notSupported": "Hindi sinusuportahan ng provider na ito ang form login",
+    "password": "Password",
+    "passwordPlaceholder": "Password",
+    "providerNotFound": "Hindi nahanap ang provider",
+    "signIn": "Mag-sign In",
+    "unexpectedError": "Naganap ang hindi inaasahang error. Pakisubukan muli."
+  },
+  "providerOAuth": {
+    "cancel": "Kanselahin",
+    "connectTo": "Kumonekta sa {{name}}",
+    "connected": "Nakakonekta!",
+    "connecting": "Kumokonekta...",
+    "exchangeFailed": "Nabigong palitan ang authorization code para sa mga token.",
+    "expiresIn": "Mag-e-expire ang sesyon sa loob ng {{minutes}} minuto",
+    "fallbackProvider": "Provider",
+    "initializing": "Sinisimulan ang authentication...",
+    "instructionsLine1": "I-scan ang QR code gamit ang iyong telepono upang awtorisahin ang access.",
+    "instructionsLine2": "Awtomatikong kokonekta ang iyong TV kapag inaprubahan mo na.",
+    "loadingContent": "Naglo-load ng iyong nilalaman...",
+    "providerNotFound": "Hindi nahanap ang provider.",
+    "secondary": "Tingnan ang iyong telepono para kumpirmahin",
+    "sessionExpired": "Nag-expire na ang sesyon ng awtorisasyon. Pakisubukan muli.",
+    "sessionFailed": "Nabigong gumawa ng sesyon ng awtorisasyon. Pakisubukan muli.",
+    "tokenExchangeFailed": "Nabigo ang pagpapalit ng token. Pakisubukan muli.",
+    "tryAgain": "Subukan Muli",
+    "unexpectedError": "Naganap ang hindi inaasahang error. Pakisubukan muli.",
+    "waiting": "Naghihintay ng awtorisasyon"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Gamitin ang provider na ito bilang pinagmulan ng aralin ngayong araw at i-download nang maaga ang mga file",
+      "label": "Awtomatikong I-download ang Aralin Ngayong Araw"
+    },
+    "disconnect": "Idiskonekta",
+    "header": "Mga Setting ng Provider",
+    "library": {
+      "description": "Ipakita ang library ng nilalaman ng provider na ito sa menu",
+      "label": "Mag-browse ng Library"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "Hindi pa available ang {{name}}.",
+      "title": "Malapit Nang Dumating"
+    },
+    "errorAlert": {
+      "providerNotFound": "Hindi nahanap ang provider {{name}}.",
+      "title": "Error"
+    },
+    "header": "Mga Provider ng Nilalaman",
+    "notSupported": {
+      "message": "Hindi pa sinusuportahan ang authentication ng {{name}}.",
+      "title": "Hindi Sinusuportahan"
+    }
+  },
+  "selectMessage": {
+    "header": "Pumili ng Mensahe",
+    "nowPlaying": "PINAPATUGTOG NGAYON"
+  },
+  "splash": {
+    "connecting": "Kumokonekta..."
+  }
+}

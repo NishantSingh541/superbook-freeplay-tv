@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Sắp ra mắt",
+    "connected": "Đã kết nối",
+    "version": "Phiên bản: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Hình ảnh",
+      "video": "Video"
+    },
+    "header": "Duyệt nội dung",
+    "noContent": "Không có nội dung khả dụng",
+    "tryDifferentFolder": "Hãy thử điều hướng đến một thư mục khác"
+  },
+  "downloads": {
+    "header": "Tải xuống",
+    "noDownloads": "Chưa có tải xuống nào"
+  },
+  "menu": {
+    "back": "Quay lại"
+  },
+  "message": {
+    "loadingImage": "Đang tải hình ảnh...",
+    "loadingVideo": "Đang tải video...",
+    "playbackFailed": "Phát lại thất bại",
+    "playbackFailedSub": "Nhấn quay lại để trở về",
+    "skippingNext": "Đang chuyển sang mục tiếp theo...",
+    "videoFailed": "Không thể tải video"
+  },
+  "nav": {
+    "downloads": "Tải xuống",
+    "plan": "Kế Hoạch Hôm Nay",
+    "providers": "Nhà cung cấp"
+  },
+  "offline": {
+    "canPlayDownloaded": "Bạn vẫn có thể phát bài học đã được tải xuống trước.",
+    "notDownloaded": "Tiếc là bài học chưa được tải xuống để phát ngoại tuyến. Vui lòng kiểm tra kết nối và thử lại.",
+    "start": "Bắt Đầu",
+    "subtitle": "Hiện không có truy cập Internet",
+    "title": "Ngoại tuyến:"
+  },
+  "planDownload": {
+    "downloadingItem": "Đang tải xuống mục {{current}} trong số {{total}}",
+    "fallbackName": "Kế hoạch buổi lễ",
+    "loadFailed": "Không thể tải kế hoạch.",
+    "loadFailedSub": "Đảm bảo rằng có một kế hoạch được lên lịch cho loại kế hoạch này.",
+    "startPlan": "Bắt đầu kế hoạch",
+    "tryAgain": "Thử lại"
+  },
+  "planPairing": {
+    "connected": "Đã kết nối!",
+    "generateFailed": "Không thể tạo mã ghép nối. Vui lòng thử lại.",
+    "generating": "Đang tạo mã ghép nối...",
+    "instructions": "Nhập mã này trong phần Loại kế hoạch của B1Admin",
+    "loadingPlan": "Đang tải kế hoạch của bạn...",
+    "regenerate": "Tạo Mã Mới",
+    "secondary": "Chúng tôi sẽ tự động kết nối sau khi được chấp nhận",
+    "tryAgain": "Thử lại",
+    "waiting": "Đang chờ kết nối"
+  },
+  "privacyPolicy": {
+    "header": "Chính sách bảo mật",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "Để xem chính sách bảo mật đầy đủ của chúng tôi, vui lòng truy cập:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Xác thực không thành công hoặc bị từ chối.",
+    "cancel": "Hủy",
+    "codeExpired": "Mã xác thực đã hết hạn. Vui lòng thử lại.",
+    "connectTo": "Kết nối với {{name}}",
+    "connected": "Đã kết nối!",
+    "enterCode": "Nhập mã này:",
+    "expiresIn": "Mã sẽ hết hạn sau {{minutes}} phút",
+    "fallbackProvider": "Nhà cung cấp",
+    "initFailed": "Không thể khởi tạo xác thực. Vui lòng thử lại.",
+    "initializing": "Đang khởi tạo xác thực...",
+    "instructions": "Quét mã QR bằng điện thoại của bạn hoặc truy cập",
+    "instructionsLine2": "và nhập mã bên dưới",
+    "loadingContent": "Đang tải nội dung của bạn...",
+    "providerNotFound": "Không tìm thấy nhà cung cấp.",
+    "regenerate": "Tạo Mã Mới",
+    "secondary": "Kiểm tra điện thoại của bạn để xác nhận",
+    "tryAgain": "Thử lại",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.",
+    "waiting": "Đang chờ ủy quyền"
+  },
+  "providerDownload": {
+    "download": "Tải xuống",
+    "downloadingItem": "Đang tải xuống mục {{current}} trong số {{total}}",
+    "fallbackTitle": "Nội dung",
+    "start": "Bắt đầu",
+    "stream": "Phát trực tuyến"
+  },
+  "providerFormLogin": {
+    "cancel": "Hủy",
+    "connected": "Đã kết nối!",
+    "email": "Email",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Nhập thông tin đăng nhập của bạn để kết nối",
+    "fallbackProvider": "Nhà cung cấp",
+    "loadingContent": "Đang tải nội dung của bạn...",
+    "loggingIn": "Đang đăng nhập...",
+    "loginFailed": "Đăng nhập không thành công. Kiểm tra thông tin đăng nhập của bạn.",
+    "loginTo": "Đăng nhập vào {{name}}",
+    "missingCredentials": "Vui lòng nhập email và mật khẩu",
+    "notSupported": "Nhà cung cấp này không hỗ trợ đăng nhập bằng biểu mẫu",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "Mật khẩu",
+    "providerNotFound": "Không tìm thấy nhà cung cấp",
+    "signIn": "Đăng nhập",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại."
+  },
+  "providerOAuth": {
+    "cancel": "Hủy",
+    "connectTo": "Kết nối với {{name}}",
+    "connected": "Đã kết nối!",
+    "connecting": "Đang kết nối...",
+    "exchangeFailed": "Không thể đổi mã ủy quyền lấy token.",
+    "expiresIn": "Phiên sẽ hết hạn sau {{minutes}} phút",
+    "fallbackProvider": "Nhà cung cấp",
+    "initializing": "Đang khởi tạo xác thực...",
+    "instructionsLine1": "Quét mã QR bằng điện thoại của bạn để ủy quyền truy cập.",
+    "instructionsLine2": "TV của bạn sẽ tự động kết nối khi bạn phê duyệt.",
+    "loadingContent": "Đang tải nội dung của bạn...",
+    "providerNotFound": "Không tìm thấy nhà cung cấp.",
+    "secondary": "Kiểm tra điện thoại của bạn để xác nhận",
+    "sessionExpired": "Phiên ủy quyền đã hết hạn. Vui lòng thử lại.",
+    "sessionFailed": "Không thể tạo phiên ủy quyền. Vui lòng thử lại.",
+    "tokenExchangeFailed": "Trao đổi token không thành công. Vui lòng thử lại.",
+    "tryAgain": "Thử lại",
+    "unexpectedError": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.",
+    "waiting": "Đang chờ ủy quyền"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Sử dụng nhà cung cấp này làm nguồn cho bài học hôm nay và tải trước tệp",
+      "label": "Tự Động Tải Bài Học Hôm Nay"
+    },
+    "disconnect": "Ngắt Kết Nối",
+    "header": "Cài Đặt Nhà Cung Cấp",
+    "library": {
+      "description": "Hiển thị thư viện nội dung của nhà cung cấp này trong menu",
+      "label": "Duyệt Thư Viện"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} chưa khả dụng.",
+      "title": "Sắp ra mắt"
+    },
+    "errorAlert": {
+      "providerNotFound": "Không tìm thấy nhà cung cấp {{name}}.",
+      "title": "Lỗi"
+    },
+    "header": "Nhà cung cấp nội dung",
+    "notSupported": {
+      "message": "Xác thực {{name}} chưa được hỗ trợ.",
+      "title": "Không được hỗ trợ"
+    }
+  },
+  "selectMessage": {
+    "header": "Chọn một tin nhắn",
+    "nowPlaying": "ĐANG PHÁT"
+  },
+  "splash": {
+    "connecting": "Đang kết nối..."
+  }
+}

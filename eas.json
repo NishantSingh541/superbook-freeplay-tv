@@ -1,0 +1,73 @@
+{
+    "cli": {
+      "version": ">= 3.0.0",
+      "appVersionSource": "local"
+    },
+    "build": {
+      "base": {
+        "android": {
+          "image": "latest"
+        }
+      },
+      "development": {
+        "developmentClient": true,
+        "distribution": "internal"
+      },
+      "e2e": {
+        "developmentClient": true,
+        "distribution": "internal",
+        "env": {
+          "EXPO_PUBLIC_FREEPLAY_ENV": "staging"
+        }
+      },
+      "preview": {
+        "distribution": "internal"
+      },
+      "production": {
+        "env": {
+          "EXPO_TV": "1"
+        },
+        "android": {
+          "buildType": "app-bundle"
+        }
+      },
+      "amazon": {
+        "developmentClient": false,
+        "extends": "base",
+        "autoIncrement": false,
+        "environment": "production",
+        "android": {
+          "buildType": "apk"
+        },
+        "channel": "production"
+      },
+      "tvos-development": {
+        "developmentClient": true,
+        "distribution": "internal",
+        "env": {
+          "EXPO_TV": "1"
+        }
+      },
+      "tvos-preview": {
+        "distribution": "internal",
+        "env": {
+          "EXPO_TV": "1"
+        }
+      },
+      "tvos-production": {
+        "env": {
+          "EXPO_TV": "1"
+        }
+      }
+    },
+    "submit": {
+      "production": {},
+      "tvos-production": {
+        "ios": {
+          "ascAppId": "6758970546",
+          "appleTeamId": "84A55Q9H5B"
+        }
+      }
+    }
+  }
+  

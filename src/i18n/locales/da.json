@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Kommer snart",
+    "connected": "Forbundet",
+    "version": "Version: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Billede",
+      "video": "Video"
+    },
+    "header": "Gennemse indhold",
+    "noContent": "Intet indhold tilgængeligt",
+    "tryDifferentFolder": "Prøv at navigere til en anden mappe"
+  },
+  "downloads": {
+    "header": "Downloads",
+    "noDownloads": "Ingen downloads endnu"
+  },
+  "menu": {
+    "back": "Tilbage"
+  },
+  "message": {
+    "loadingImage": "Indlæser billede...",
+    "loadingVideo": "Indlæser video...",
+    "playbackFailed": "Afspilning mislykkedes",
+    "playbackFailedSub": "Tryk tilbage for at vende tilbage",
+    "skippingNext": "Springer til næste element...",
+    "videoFailed": "Videoen kunne ikke indlæses"
+  },
+  "nav": {
+    "downloads": "Downloads",
+    "plan": "Dagens Plan",
+    "providers": "Udbydere"
+  },
+  "offline": {
+    "canPlayDownloaded": "Du kan stadig afspille lektionen, der blev downloadet på forhånd.",
+    "notDownloaded": "Desværre er lektionen endnu ikke blevet downloadet til offline afspilning. Tjek din forbindelse, og prøv igen.",
+    "start": "Start",
+    "subtitle": "Internetadgang er i øjeblikket ikke tilgængelig",
+    "title": "Offline:"
+  },
+  "planDownload": {
+    "downloadingItem": "Downloader element {{current}} af {{total}}",
+    "fallbackName": "Gudstjenesteplan",
+    "loadFailed": "Planen kunne ikke indlæses.",
+    "loadFailedSub": "Sørg for, at en plan er planlagt for denne plantype.",
+    "startPlan": "Start plan",
+    "tryAgain": "Prøv igen"
+  },
+  "planPairing": {
+    "connected": "Tilsluttet!",
+    "generateFailed": "Kunne ikke generere parringskode. Prøv igen.",
+    "generating": "Genererer parringskode...",
+    "instructions": "Indtast denne kode i Plantype-sektionen i B1Admin",
+    "loadingPlan": "Indlæser din plan...",
+    "regenerate": "Generer Ny Kode",
+    "secondary": "Vi opretter automatisk forbindelse, når det er accepteret",
+    "tryAgain": "Prøv igen",
+    "waiting": "Venter på forbindelse"
+  },
+  "privacyPolicy": {
+    "header": "Privatlivspolitik",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "For at se vores fulde privatlivspolitik, besøg venligst:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Godkendelse mislykkedes eller blev nægtet.",
+    "cancel": "Annuller",
+    "codeExpired": "Godkendelseskode udløbet. Prøv igen.",
+    "connectTo": "Forbind til {{name}}",
+    "connected": "Forbundet!",
+    "enterCode": "Indtast denne kode:",
+    "expiresIn": "Koden udløber om {{minutes}} minutter",
+    "fallbackProvider": "Udbyder",
+    "initFailed": "Kunne ikke initialisere godkendelse. Prøv igen.",
+    "initializing": "Initialiserer godkendelse...",
+    "instructions": "Scan QR-koden med din telefon, eller besøg",
+    "instructionsLine2": "og indtast koden nedenfor",
+    "loadingContent": "Indlæser dit indhold...",
+    "providerNotFound": "Udbyder blev ikke fundet.",
+    "regenerate": "Generer Ny Kode",
+    "secondary": "Tjek din telefon for at bekræfte",
+    "tryAgain": "Prøv igen",
+    "unexpectedError": "Der opstod en uventet fejl. Prøv igen.",
+    "waiting": "Venter på godkendelse"
+  },
+  "providerDownload": {
+    "download": "Download",
+    "downloadingItem": "Downloader element {{current}} af {{total}}",
+    "fallbackTitle": "Indhold",
+    "start": "Start",
+    "stream": "Stream"
+  },
+  "providerFormLogin": {
+    "cancel": "Annuller",
+    "connected": "Forbundet!",
+    "email": "E-mail",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Indtast dine legitimationsoplysninger for at oprette forbindelse",
+    "fallbackProvider": "Udbyder",
+    "loadingContent": "Indlæser dit indhold...",
+    "loggingIn": "Logger ind...",
+    "loginFailed": "Login mislykkedes. Tjek dine legitimationsoplysninger.",
+    "loginTo": "Log ind på {{name}}",
+    "missingCredentials": "Indtast venligst e-mail og adgangskode",
+    "notSupported": "Denne udbyder understøtter ikke formular-login",
+    "password": "Adgangskode",
+    "passwordPlaceholder": "Adgangskode",
+    "providerNotFound": "Udbyder blev ikke fundet",
+    "signIn": "Log ind",
+    "unexpectedError": "Der opstod en uventet fejl. Prøv igen."
+  },
+  "providerOAuth": {
+    "cancel": "Annuller",
+    "connectTo": "Forbind til {{name}}",
+    "connected": "Forbundet!",
+    "connecting": "Forbinder...",
+    "exchangeFailed": "Kunne ikke udveksle godkendelseskode for tokens.",
+    "expiresIn": "Sessionen udløber om {{minutes}} minutter",
+    "fallbackProvider": "Udbyder",
+    "initializing": "Initialiserer godkendelse...",
+    "instructionsLine1": "Scan QR-koden med din telefon for at godkende adgang.",
+    "instructionsLine2": "Dit TV vil automatisk forbinde, når du godkender.",
+    "loadingContent": "Indlæser dit indhold...",
+    "providerNotFound": "Udbyder blev ikke fundet.",
+    "secondary": "Tjek din telefon for at bekræfte",
+    "sessionExpired": "Godkendelsessession udløbet. Prøv igen.",
+    "sessionFailed": "Kunne ikke oprette godkendelsessession. Prøv igen.",
+    "tokenExchangeFailed": "Tokenudveksling mislykkedes. Prøv igen.",
+    "tryAgain": "Prøv igen",
+    "unexpectedError": "Der opstod en uventet fejl. Prøv igen.",
+    "waiting": "Venter på godkendelse"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Brug denne udbyder som kilde til dagens lektion og forhåndsdownload filer",
+      "label": "Download Automatisk Dagens Lektion"
+    },
+    "disconnect": "Afbryd",
+    "header": "Udbyderindstillinger",
+    "library": {
+      "description": "Vis denne udbyders indholdsbibliotek i menuen",
+      "label": "Gennemse Bibliotek"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} er endnu ikke tilgængelig.",
+      "title": "Kommer snart"
+    },
+    "errorAlert": {
+      "providerNotFound": "Udbyder {{name}} blev ikke fundet.",
+      "title": "Fejl"
+    },
+    "header": "Indholdsudbydere",
+    "notSupported": {
+      "message": "{{name}} godkendelse understøttes endnu ikke.",
+      "title": "Ikke understøttet"
+    }
+  },
+  "selectMessage": {
+    "header": "Vælg en besked",
+    "nowPlaying": "AFSPILLES NU"
+  },
+  "splash": {
+    "connecting": "Opretter forbindelse..."
+  }
+}

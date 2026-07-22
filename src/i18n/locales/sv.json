@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Kommer snart",
+    "connected": "Ansluten",
+    "version": "Version: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Bild",
+      "video": "Video"
+    },
+    "header": "Bläddra i innehåll",
+    "noContent": "Inget innehåll tillgängligt",
+    "tryDifferentFolder": "Försök navigera till en annan mapp"
+  },
+  "downloads": {
+    "header": "Nedladdningar",
+    "noDownloads": "Inga nedladdningar än"
+  },
+  "menu": {
+    "back": "Tillbaka"
+  },
+  "message": {
+    "loadingImage": "Laddar bild...",
+    "loadingVideo": "Laddar video...",
+    "playbackFailed": "Uppspelning misslyckades",
+    "playbackFailedSub": "Tryck tillbaka för att återgå",
+    "skippingNext": "Hoppar till nästa objekt...",
+    "videoFailed": "Videon kunde inte laddas"
+  },
+  "nav": {
+    "downloads": "Nedladdningar",
+    "plan": "Dagens Plan",
+    "providers": "Leverantörer"
+  },
+  "offline": {
+    "canPlayDownloaded": "Du kan fortfarande spela upp lektionen som laddades ner i förväg.",
+    "notDownloaded": "Tyvärr har lektionen inte laddats ner för offline-uppspelning än. Kontrollera din anslutning och försök igen.",
+    "start": "Starta",
+    "subtitle": "Internetåtkomst är för närvarande inte tillgänglig",
+    "title": "Offline:"
+  },
+  "planDownload": {
+    "downloadingItem": "Laddar ner objekt {{current}} av {{total}}",
+    "fallbackName": "Gudstjänstplan",
+    "loadFailed": "Planen kunde inte laddas.",
+    "loadFailedSub": "Se till att en plan är schemalagd för denna plantyp.",
+    "startPlan": "Starta plan",
+    "tryAgain": "Försök igen"
+  },
+  "planPairing": {
+    "connected": "Ansluten!",
+    "generateFailed": "Det gick inte att generera parkopplingskod. Försök igen.",
+    "generating": "Genererar parkopplingskod...",
+    "instructions": "Ange den här koden i avsnittet Plantyp i B1Admin",
+    "loadingPlan": "Laddar din plan...",
+    "regenerate": "Generera Ny Kod",
+    "secondary": "Vi ansluter automatiskt när det har accepterats",
+    "tryAgain": "Försök igen",
+    "waiting": "Väntar på anslutning"
+  },
+  "privacyPolicy": {
+    "header": "Integritetspolicy",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "För att se vår fullständiga integritetspolicy, besök:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Autentisering misslyckades eller nekades.",
+    "cancel": "Avbryt",
+    "codeExpired": "Autentiseringskoden har gått ut. Försök igen.",
+    "connectTo": "Anslut till {{name}}",
+    "connected": "Ansluten!",
+    "enterCode": "Ange denna kod:",
+    "expiresIn": "Koden går ut om {{minutes}} minuter",
+    "fallbackProvider": "Leverantör",
+    "initFailed": "Det gick inte att initiera autentisering. Försök igen.",
+    "initializing": "Initierar autentisering...",
+    "instructions": "Skanna QR-koden med din telefon, eller besök",
+    "instructionsLine2": "och ange koden nedan",
+    "loadingContent": "Laddar ditt innehåll...",
+    "providerNotFound": "Leverantör hittades inte.",
+    "regenerate": "Generera Ny Kod",
+    "secondary": "Kontrollera din telefon för att bekräfta",
+    "tryAgain": "Försök igen",
+    "unexpectedError": "Ett oväntat fel uppstod. Försök igen.",
+    "waiting": "Väntar på auktorisering"
+  },
+  "providerDownload": {
+    "download": "Ladda ner",
+    "downloadingItem": "Laddar ner objekt {{current}} av {{total}}",
+    "fallbackTitle": "Innehåll",
+    "start": "Starta",
+    "stream": "Strömma"
+  },
+  "providerFormLogin": {
+    "cancel": "Avbryt",
+    "connected": "Ansluten!",
+    "email": "E-post",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Ange dina inloggningsuppgifter för att ansluta",
+    "fallbackProvider": "Leverantör",
+    "loadingContent": "Laddar ditt innehåll...",
+    "loggingIn": "Loggar in...",
+    "loginFailed": "Inloggningen misslyckades. Kontrollera dina inloggningsuppgifter.",
+    "loginTo": "Logga in på {{name}}",
+    "missingCredentials": "Ange e-post och lösenord",
+    "notSupported": "Den här leverantören stöder inte formulärinloggning",
+    "password": "Lösenord",
+    "passwordPlaceholder": "Lösenord",
+    "providerNotFound": "Leverantör hittades inte",
+    "signIn": "Logga in",
+    "unexpectedError": "Ett oväntat fel uppstod. Försök igen."
+  },
+  "providerOAuth": {
+    "cancel": "Avbryt",
+    "connectTo": "Anslut till {{name}}",
+    "connected": "Ansluten!",
+    "connecting": "Ansluter...",
+    "exchangeFailed": "Det gick inte att byta auktoriseringskod mot tokens.",
+    "expiresIn": "Sessionen går ut om {{minutes}} minuter",
+    "fallbackProvider": "Leverantör",
+    "initializing": "Initierar autentisering...",
+    "instructionsLine1": "Skanna QR-koden med din telefon för att auktorisera åtkomst.",
+    "instructionsLine2": "Din TV ansluter automatiskt när du godkänner.",
+    "loadingContent": "Laddar ditt innehåll...",
+    "providerNotFound": "Leverantör hittades inte.",
+    "secondary": "Kontrollera din telefon för att bekräfta",
+    "sessionExpired": "Auktoriseringssessionen har gått ut. Försök igen.",
+    "sessionFailed": "Det gick inte att skapa auktoriseringssession. Försök igen.",
+    "tokenExchangeFailed": "Tokenutbyte misslyckades. Försök igen.",
+    "tryAgain": "Försök igen",
+    "unexpectedError": "Ett oväntat fel uppstod. Försök igen.",
+    "waiting": "Väntar på auktorisering"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Använd denna leverantör som källa för dagens lektion och förhandsladda filer",
+      "label": "Ladda Ner Dagens Lektion Automatiskt"
+    },
+    "disconnect": "Koppla Från",
+    "header": "Leverantörsinställningar",
+    "library": {
+      "description": "Visa denna leverantörs innehållsbibliotek i menyn",
+      "label": "Bläddra i Biblioteket"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} är inte tillgänglig ännu.",
+      "title": "Kommer snart"
+    },
+    "errorAlert": {
+      "providerNotFound": "Leverantör {{name}} hittades inte.",
+      "title": "Fel"
+    },
+    "header": "Innehållsleverantörer",
+    "notSupported": {
+      "message": "{{name}}-autentisering stöds inte ännu.",
+      "title": "Stöds inte"
+    }
+  },
+  "selectMessage": {
+    "header": "Välj ett meddelande",
+    "nowPlaying": "SPELAS NU"
+  },
+  "splash": {
+    "connecting": "Ansluter..."
+  }
+}

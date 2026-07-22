@@ -1,0 +1,169 @@
+{
+  "common": {
+    "comingSoon": "Demnächst verfügbar",
+    "connected": "Verbunden",
+    "version": "Version: {{version}}"
+  },
+  "contentBrowser": {
+    "fileType": {
+      "image": "Bild",
+      "video": "Video"
+    },
+    "header": "Inhalte durchsuchen",
+    "noContent": "Keine Inhalte verfügbar",
+    "tryDifferentFolder": "Versuchen Sie, zu einem anderen Ordner zu navigieren"
+  },
+  "downloads": {
+    "header": "Downloads",
+    "noDownloads": "Noch keine Downloads"
+  },
+  "menu": {
+    "back": "Zurück"
+  },
+  "message": {
+    "loadingImage": "Bild wird geladen...",
+    "loadingVideo": "Video wird geladen...",
+    "playbackFailed": "Wiedergabe fehlgeschlagen",
+    "playbackFailedSub": "Zurück drücken, um zurückzukehren",
+    "skippingNext": "Springe zum nächsten Element...",
+    "videoFailed": "Video konnte nicht geladen werden"
+  },
+  "nav": {
+    "downloads": "Downloads",
+    "plan": "Heutiger Plan",
+    "providers": "Anbieter"
+  },
+  "offline": {
+    "canPlayDownloaded": "Sie können die zuvor heruntergeladene Lektion weiterhin abspielen.",
+    "notDownloaded": "Leider wurde die Lektion noch nicht für die Offline-Wiedergabe heruntergeladen.  Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "start": "Start",
+    "subtitle": "Internetzugang ist derzeit nicht verfügbar",
+    "title": "Offline:"
+  },
+  "planDownload": {
+    "downloadingItem": "Element {{current}} von {{total}} wird heruntergeladen",
+    "fallbackName": "Gottesdienstplan",
+    "loadFailed": "Der Plan konnte nicht geladen werden.",
+    "loadFailedSub": "Stellen Sie sicher, dass ein Plan für diesen Plantyp geplant ist.",
+    "startPlan": "Plan starten",
+    "tryAgain": "Erneut versuchen"
+  },
+  "planPairing": {
+    "connected": "Verbunden!",
+    "generateFailed": "Kopplungscode konnte nicht generiert werden. Bitte versuchen Sie es erneut.",
+    "generating": "Kopplungscode wird generiert...",
+    "instructions": "Geben Sie diesen Code im Abschnitt Plantyp von B1Admin ein",
+    "loadingPlan": "Ihr Plan wird geladen...",
+    "regenerate": "Neuen Code Generieren",
+    "secondary": "Wir verbinden uns automatisch, sobald akzeptiert",
+    "tryAgain": "Erneut versuchen",
+    "waiting": "Warte auf Verbindung"
+  },
+  "privacyPolicy": {
+    "header": "Datenschutzerklärung",
+    "url": "churchapps.org/privacy",
+    "viewFullPolicy": "Um unsere vollständige Datenschutzerklärung anzuzeigen, besuchen Sie bitte:"
+  },
+  "providerDeviceAuth": {
+    "authFailed": "Authentifizierung fehlgeschlagen oder verweigert.",
+    "cancel": "Abbrechen",
+    "codeExpired": "Authentifizierungscode abgelaufen. Bitte versuchen Sie es erneut.",
+    "connectTo": "Mit {{name}} verbinden",
+    "connected": "Verbunden!",
+    "enterCode": "Geben Sie diesen Code ein:",
+    "expiresIn": "Code läuft in {{minutes}} Minuten ab",
+    "fallbackProvider": "Anbieter",
+    "initFailed": "Authentifizierung konnte nicht initialisiert werden. Bitte versuchen Sie es erneut.",
+    "initializing": "Authentifizierung wird initialisiert...",
+    "instructions": "Scannen Sie den QR-Code mit Ihrem Telefon oder besuchen Sie",
+    "instructionsLine2": "und geben Sie den unten stehenden Code ein",
+    "loadingContent": "Ihre Inhalte werden geladen...",
+    "providerNotFound": "Anbieter nicht gefunden.",
+    "regenerate": "Neuen Code Generieren",
+    "secondary": "Überprüfen Sie Ihr Telefon zur Bestätigung",
+    "tryAgain": "Erneut versuchen",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "waiting": "Warte auf Autorisierung"
+  },
+  "providerDownload": {
+    "download": "Herunterladen",
+    "downloadingItem": "Element {{current}} von {{total}} wird heruntergeladen",
+    "fallbackTitle": "Inhalt",
+    "start": "Starten",
+    "stream": "Streamen"
+  },
+  "providerFormLogin": {
+    "cancel": "Abbrechen",
+    "connected": "Verbunden!",
+    "email": "E-Mail",
+    "emailPlaceholder": "email@example.com",
+    "enterCredentials": "Geben Sie Ihre Anmeldedaten ein, um sich zu verbinden",
+    "fallbackProvider": "Anbieter",
+    "loadingContent": "Ihre Inhalte werden geladen...",
+    "loggingIn": "Anmeldung läuft...",
+    "loginFailed": "Anmeldung fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten.",
+    "loginTo": "Bei {{name}} anmelden",
+    "missingCredentials": "Bitte geben Sie E-Mail und Passwort ein",
+    "notSupported": "Dieser Anbieter unterstützt keine Formularanmeldung",
+    "password": "Passwort",
+    "passwordPlaceholder": "Passwort",
+    "providerNotFound": "Anbieter nicht gefunden",
+    "signIn": "Anmelden",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+  },
+  "providerOAuth": {
+    "cancel": "Abbrechen",
+    "connectTo": "Mit {{name}} verbinden",
+    "connected": "Verbunden!",
+    "connecting": "Verbinde...",
+    "exchangeFailed": "Austausch des Autorisierungscodes gegen Token fehlgeschlagen.",
+    "expiresIn": "Sitzung läuft in {{minutes}} Minuten ab",
+    "fallbackProvider": "Anbieter",
+    "initializing": "Authentifizierung wird initialisiert...",
+    "instructionsLine1": "Scannen Sie den QR-Code mit Ihrem Telefon, um den Zugriff zu autorisieren.",
+    "instructionsLine2": "Ihr Fernseher verbindet sich automatisch, sobald Sie zustimmen.",
+    "loadingContent": "Ihre Inhalte werden geladen...",
+    "providerNotFound": "Anbieter nicht gefunden.",
+    "secondary": "Überprüfen Sie Ihr Telefon zur Bestätigung",
+    "sessionExpired": "Autorisierungssitzung abgelaufen. Bitte versuchen Sie es erneut.",
+    "sessionFailed": "Autorisierungssitzung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+    "tokenExchangeFailed": "Token-Austausch fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "tryAgain": "Erneut versuchen",
+    "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+    "waiting": "Warte auf Autorisierung"
+  },
+  "providerSettings": {
+    "autoDownload": {
+      "description": "Diesen Anbieter als Quelle für die heutige Lektion verwenden und Dateien vorab herunterladen",
+      "label": "Heutige Lektion Automatisch Herunterladen"
+    },
+    "disconnect": "Trennen",
+    "header": "Anbietereinstellungen",
+    "library": {
+      "description": "Inhaltsbibliothek dieses Anbieters im Menü anzeigen",
+      "label": "Bibliothek Durchsuchen"
+    }
+  },
+  "providers": {
+    "comingSoonAlert": {
+      "message": "{{name}} ist noch nicht verfügbar.",
+      "title": "Demnächst verfügbar"
+    },
+    "errorAlert": {
+      "providerNotFound": "Anbieter {{name}} nicht gefunden.",
+      "title": "Fehler"
+    },
+    "header": "Inhaltsanbieter",
+    "notSupported": {
+      "message": "Die Authentifizierung von {{name}} wird noch nicht unterstützt.",
+      "title": "Nicht unterstützt"
+    }
+  },
+  "selectMessage": {
+    "header": "Nachricht auswählen",
+    "nowPlaying": "LÄUFT GERADE"
+  },
+  "splash": {
+    "connecting": "Verbindung wird hergestellt..."
+  }
+}
