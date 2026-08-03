@@ -144,7 +144,7 @@ export const ContentBrowserScreen = (props: Props) => {
 
       const files = contents.filter((item): item is ContentFile => item.type === "file");
 
-      if (files.length > 0) {
+      if (files.length > 0 && !folder.browseAsGrid) {
         CachedData.messageFiles = files.map(toMessageFile);
 
         props.navigateTo("providerDownload", {
@@ -252,7 +252,7 @@ export const ContentBrowserScreen = (props: Props) => {
                   width: "100%",
                   borderRadius: 12
                 }}
-                resizeMode="cover"
+                resizeMode="contain"
                 source={{ uri: folderImage }}
               />
             )
@@ -336,7 +336,7 @@ export const ContentBrowserScreen = (props: Props) => {
                   width: "100%",
                   borderRadius: 12
                 }}
-                resizeMode="cover"
+                resizeMode="contain"
                 source={{ uri: file.thumbnail }}
               />
             ) : (

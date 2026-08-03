@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CachedData } from "../helpers";
 import { Colors } from "../helpers/Styles";
 import { MessageFileInterface } from "../interfaces";
-import { Image, View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { Image, View, Text, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { DimensionHelper } from "../helpers/DimensionHelper";
 import Video from "react-native-video";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -13,6 +13,7 @@ type Props = {
   file: MessageFileInterface,
   downloaded: boolean,
   paused: boolean,
+  muted?: boolean,
   onProgress?: (data: { currentTime: number; playableDuration: number }) => void,
   onEnd?: () => void
 };
@@ -132,9 +133,10 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
       ref={videoRef}
       source={{ uri: filePath }}
       repeat={props.file.loopVideo}
-      resizeMode="cover"
+      resizeMode={Platform.isTV ? "cover" : "contain"}
       style={{ width: DimensionHelper.wp("100%"), height: DimensionHelper.hp("100%") }}
       paused={internalPaused}
+      muted={props.muted ?? false}
       playInBackground={false}
       playWhenInactive={false}
       onProgress={props.onProgress}

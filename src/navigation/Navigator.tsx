@@ -39,12 +39,12 @@ export const Navigator = () => {
     case "planPairing": screen = (<PlanPairingScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} />); break;
     case "planDownload": screen = (<PlanDownloadScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} />); break;
     case "offline": screen = (<OfflineScreen navigateTo={handleNavigate} />); break;
-    case "player": screen = (<PlayerScreen navigateTo={handleNavigate} providerId={currentData?.providerId} providerStartIndex={currentData?.providerStartIndex} streaming={currentData?.streaming} folderStack={currentData?.folderStack} downloadedLesson={currentData?.downloadedLesson} />); break;
+    case "player": screen = (<PlayerScreen navigateTo={handleNavigate} providerId={currentData?.providerId} providerStartIndex={currentData?.providerStartIndex} streaming={currentData?.streaming} folderStack={currentData?.folderStack} downloadedLesson={currentData?.downloadedLesson} backToPage={currentData?.backToPage} backToData={currentData?.backToData} />); break;
     case "downloads": screen = (<DownloadsScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} />); break;
 
     // Content Provider screens
     case "contentBrowser": screen = (<ContentBrowserScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} folderStack={currentData?.folderStack} />); break;
-    case "cbnToday": screen = (<CbnTodayScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} />); break;
+    case "cbnToday": screen = (<CbnTodayScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} initialCategory={currentData?.initialCategory} />); break;
     case "providerDeviceAuth": screen = (<ProviderDeviceAuthScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} />); break;
     case "providerFormLogin": screen = (<ProviderFormLoginScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} />); break;
     case "providerOAuth": screen = (<ProviderOAuthScreen navigateTo={handleNavigate} sidebarState={sidebarState} sidebarExpanded={sidebarExpanded} providerId={currentData?.providerId} />); break;

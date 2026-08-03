@@ -1096,8 +1096,8 @@ __metadata:
 
 "@churchapps/content-providers@file:./vendor/churchapps-content-providers-v0.5.0.tgz::locator=freeplay%40workspace%3A.":
   version: 0.5.0
-  resolution: "@churchapps/content-providers@file:./vendor/churchapps-content-providers-v0.5.0.tgz#./vendor/churchapps-content-providers-v0.5.0.tgz::hash=3f42b7&locator=freeplay%40workspace%3A."
-  checksum: 10c0/60df9249066f4bee8b17125d2b34bf161c56463471d2c881399f9a1f8d2877a2280d157cbd5a9dc695515622c915be18f7e522385dd69be98a748a1b4513d878
+  resolution: "@churchapps/content-providers@file:./vendor/churchapps-content-providers-v0.5.0.tgz#./vendor/churchapps-content-providers-v0.5.0.tgz::hash=513079&locator=freeplay%40workspace%3A."
+  checksum: 10c0/7ba74572ffd672666ace3146c90a9294233d73fef1a7cc0d38776a79f645f95b7466fb54bbebf56d551a4742d43ddca314ac4f80804d23c7602115c98ecb40cd
   languageName: node
   linkType: hard
 

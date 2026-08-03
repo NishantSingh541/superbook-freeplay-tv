@@ -81,7 +81,7 @@ module.exports = () => {
     name: branding.appName,
     slug: branding.slug,
     version: branding.version,
-    orientation: "landscape",
+    orientation: isTvBuild ? "landscape" : "default",
     icon: "./assets/images/icon.png",
     scheme: branding.scheme,
     userInterfaceStyle: "automatic",

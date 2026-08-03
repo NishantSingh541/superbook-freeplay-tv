@@ -7,3 +7,4 @@ export { SkeletonCard } from "./SkeletonCard";
 export { EmptyState } from "./EmptyState";
 export { PairingCode } from "./PairingCode";
 export { PlayerErrorBoundary } from "./PlayerErrorBoundary";
+export { VideoControls } from "./VideoControls";

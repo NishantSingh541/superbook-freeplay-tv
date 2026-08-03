@@ -150,9 +150,14 @@ export const ProviderDownloadScreen = (props: Props) => {
   };
 
   const handleBack = () => {
+    const stack = props.folderStack || [];
+    const currentGridFolder = stack[stack.length - 1];
+    // A file selected from within a browseAsGrid folder's own grid should
+    // return to that same grid on back, not pop past it to the parent.
+    const targetStack = currentGridFolder?.browseAsGrid ? stack : stack.slice(0, -1);
     props.navigateTo("contentBrowser", {
       providerId: props.providerId,
-      folderStack: props.folderStack?.slice(0, -1) || []
+      folderStack: targetStack
     });
   };
 

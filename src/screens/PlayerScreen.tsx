@@ -1,13 +1,12 @@
 import React, { useRef } from "react";
-import { HWEvent, BackHandler, useTVEventHandler, Pressable, TextInput, View, StyleSheet, Animated, Dimensions } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { HWEvent, BackHandler, useTVEventHandler, Pressable, TextInput } from "react-native";
 import { ContentFolder } from "../interfaces";
 import { CachedData } from "../helpers";
 import { PlayerHelper } from "../helpers/PlayerHelper";
 import { SoundHelper } from "../helpers/SoundHelper";
 import GestureRecognizer from "react-native-swipe-gestures";
 import { useKeepAwake } from "expo-keep-awake";
-import { Message, SelectMessage, MessageHandle, PlayerErrorBoundary } from "../components";
+import { Message, SelectMessage, MessageHandle, PlayerErrorBoundary, VideoControls } from "../components";
 
 type Props = {
   navigateTo(page: string, data?: any): void;
@@ -16,12 +15,15 @@ type Props = {
   streaming?: boolean;
   folderStack?: ContentFolder[];
   downloadedLesson?: boolean;
+  /**
+   * Explicit override for where the hardware/remote Back button should
+   * return to. When set, this takes priority over all the folder-stack-based
+   * guessing below — needed for screens like CbnTodayScreen that jump
+   * straight into playback with no real folder hierarchy to infer from.
+   */
+  backToPage?: string;
+  backToData?: any;
 };
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
-
-const scaleWidth = (value: number) => (value / 1920) * screenWidth;
-const scaleHeight = (value: number) => (value / 1080) * screenHeight;
 
 export const PlayerScreen = (props: Props) => {
   useKeepAwake();
@@ -31,7 +33,10 @@ export const PlayerScreen = (props: Props) => {
   const [messageIndex, setMessageIndex] = React.useState(props.providerStartIndex ?? 0);
   const [paused, setPaused] = React.useState(false);
   const [triggerPauseCheck, setTriggerPauseCheck] = React.useState(0);
-  const [progress, setProgress] = React.useState(0);
+  const [currentTime, setCurrentTime] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const [muted, setMuted] = React.useState(false);
+  const [controlsVisible, setControlsVisible] = React.useState(true);
 
   const isProviderMedia = !!props.providerId;
 
@@ -47,21 +52,6 @@ export const PlayerScreen = (props: Props) => {
     return ext === "webm" || ext === "mp4" || file.url.includes("externalVideos") || file.url.includes("stream.mux.com");
   };
 
-  const feedbackAnim = useRef(new Animated.Value(0)).current;
-  const showFeedback = () => {
-
-    if (!paused) {
-      feedbackAnim.setValue(1);
-      return;
-    }
-
-    Animated.sequence([
-      Animated.timing(feedbackAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-      Animated.delay(1000),
-      Animated.timing(feedbackAnim, { toValue: 0, duration: 300, useNativeDriver: true })
-    ]).start();
-  };
-
   const init = () => {
     // Utilities.trackEvent("Player Screen");
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => { handleBack(); return true; });
@@ -75,7 +65,6 @@ export const PlayerScreen = (props: Props) => {
     const newPausedState = !paused;
     setPaused(newPausedState);
     PlayerHelper.pendingPause = newPausedState;
-    showFeedback();
 
     if (newPausedState) stopTimer();
     else startTimer();
@@ -83,6 +72,7 @@ export const PlayerScreen = (props: Props) => {
 
   const handleRemotePress = async (pendingKey: string) => {
     if (showSelectMessage) return;
+    handleTapToShowControls();
     switch (pendingKey) {
       case "right": handleSkipForward(); break;
       case "fastForward": handleRight(); break;
@@ -128,10 +118,17 @@ export const PlayerScreen = (props: Props) => {
       startTimer();
     } else {
       stopTimer();
-      if (props.downloadedLesson) {
+      if (props.backToPage) {
+        props.navigateTo(props.backToPage, props.backToData);
+      } else if (props.downloadedLesson) {
         props.navigateTo("downloads");
       } else if (isProviderMedia && props.providerId) {
-        props.navigateTo("contentBrowser", { providerId: props.providerId, folderStack: (props.folderStack || []).slice(0, -1) });
+        const stack = props.folderStack || [];
+        const currentGridFolder = stack[stack.length - 1];
+        // A file selected from within a browseAsGrid folder's own grid should
+        // return to that same grid on back, not pop past it to the parent.
+        const targetStack = currentGridFolder?.browseAsGrid ? stack : stack.slice(0, -1);
+        props.navigateTo("contentBrowser", { providerId: props.providerId, folderStack: targetStack });
       } else if (CachedData.providerId) {
         props.navigateTo("planDownload");
       } else {
@@ -142,7 +139,6 @@ export const PlayerScreen = (props: Props) => {
 
   const goForward = () => {
     if (paused) setPaused(false);
-    feedbackAnim.setValue(0);
     // Guard against null/undefined messageFiles
     if (!CachedData.messageFiles || CachedData.messageFiles.length === 0) {
       handleBack();
@@ -155,7 +151,6 @@ export const PlayerScreen = (props: Props) => {
 
   const goBack = () => {
     if (paused) setPaused(false);
-    feedbackAnim.setValue(0);
     // Guard against null/undefined messageFiles
     if (!CachedData.messageFiles || CachedData.messageFiles.length === 0) {
       handleBack();
@@ -186,7 +181,6 @@ export const PlayerScreen = (props: Props) => {
 
   const handleMessageSelect = (index: number) => {
     if (paused) setPaused(false);
-    feedbackAnim.setValue(0);
     setShowSelectMessage(false);
     setMessageIndex(index);
     startTimer();
@@ -194,6 +188,7 @@ export const PlayerScreen = (props: Props) => {
 
   const handlePressablePress = () => {
     setTriggerPauseCheck(Math.random());
+    handleTapToShowControls();
   };
 
   React.useEffect(init, []);
@@ -202,10 +197,22 @@ export const PlayerScreen = (props: Props) => {
   React.useEffect(() => { if (PlayerHelper.pendingPause !== paused) handlePlayPause(); }, [triggerPauseCheck]);
 
   const handleProgress = (data: { currentTime: number, playableDuration: number }) => {
-    const { currentTime, playableDuration } = data;
-    currentTimeRef.current = currentTime;
+    const { currentTime: newTime, playableDuration } = data;
+    currentTimeRef.current = newTime;
     durationRef.current = playableDuration;
-    if (playableDuration > 0) setProgress(currentTime / playableDuration);
+    setCurrentTime(newTime);
+    setDuration(playableDuration);
+  };
+
+  const handleControlsSeek = (time: number) => {
+    messageRef.current?.seek(time);
+    setCurrentTime(time);
+  };
+
+  const handleToggleMute = () => setMuted((m) => !m);
+
+  const handleTapToShowControls = () => {
+    setControlsVisible(true);
   };
 
   // Check if we have valid files to play
@@ -254,57 +261,29 @@ export const PlayerScreen = (props: Props) => {
             file={currentFile}
             downloaded={!props.streaming}
             paused={paused}
+            muted={muted}
             onProgress={handleProgress}
             onEnd={handleVideoEnd}
           />
           <TextInput autoFocus style={{ display: "none" }} showSoftInputOnFocus={false} returnKeyType="none" />
 
           {currentFileType === "video" && (
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                styles.overlayWrapper,
-                { backgroundColor: "rgba(0,0,0,0.5)", opacity: feedbackAnim }
-              ]}
-            >
-              <Pressable style={styles.playPauseButton} onPress={handlePlayPause}>
-                <Icon name={paused ? "play-circle-outline" : "pause-circle-outline"} size={scaleHeight(120)} color="#fff" />
-              </Pressable>
-
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
-              </View>
-            </Animated.View>
+            <VideoControls
+              paused={paused}
+              currentTime={currentTime}
+              duration={duration}
+              muted={muted}
+              onPlayPause={handlePlayPause}
+              onSeek={handleControlsSeek}
+              onToggleMute={handleToggleMute}
+              visible={controlsVisible}
+              onRequestHide={() => setControlsVisible(false)}
+            />
           )}
+
         </Pressable>
       </GestureRecognizer>
     </PlayerErrorBoundary>
   );
 };
 
-const styles = StyleSheet.create({
-  overlayWrapper: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  playPauseButton: {
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  progressContainer: {
-    position: "absolute",
-    bottom: scaleHeight(50),
-    left: scaleWidth(40),
-    right: scaleWidth(40),
-    height: scaleHeight(10),
-    backgroundColor: "rgba(255,255,255,0.3)",
-    borderRadius: scaleHeight(5)
-  },
-  progressBar: {
-    height: scaleHeight(10),
-    backgroundColor: "#fff",
-    borderRadius: scaleHeight(5)
-  }
-});
