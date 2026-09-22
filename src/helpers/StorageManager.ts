@@ -2,10 +2,18 @@ import RNFS from "react-native-fs";
 import * as Sentry from "@sentry/react-native";
 import { DownloadedItemInterface } from "../interfaces";
 import { DownloadIndex } from "./DownloadIndex";
+import { CachedData } from "./CachedData";
 
 const MB = 1024 * 1024;
 const LOW_SPACE_THRESHOLD_BYTES = 500 * MB;
 const EVICTION_TARGET_BYTES = 1024 * MB;
+
+export type StorageUsage = {
+  totalBytes: number;
+  freeBytes: number;
+  downloadsBytes: number;
+  otherBytes: number;
+};
 
 export class StorageManager {
   static async getFreeBytes(): Promise<number> {
@@ -15,6 +23,44 @@ export class StorageManager {
     } catch {
       return Number.POSITIVE_INFINITY;
     }
+  }
+
+  /**
+   * Breaks device storage into: this app's downloaded videos, everything
+   * else in use, and free space — for a segmented usage display.
+   */
+  static async getUsage(): Promise<StorageUsage> {
+    let totalBytes = 0;
+    let freeBytes = 0;
+    try {
+      const info = await RNFS.getFSInfo();
+      totalBytes = info.totalSpace;
+      freeBytes = info.freeSpace;
+    } catch {
+      // Leave as 0 — caller should treat a 0-total result as "unknown"
+    }
+
+    let downloadsBytes = 0;
+    try {
+      const entries = await DownloadIndex.getAll();
+      for (const entry of entries) {
+        for (const f of entry.messageFiles) {
+          if (!f.url) continue;
+          try {
+            const fullPath = decodeURIComponent(CachedData.getFilePath(f.url));
+            const stat = await RNFS.stat(fullPath);
+            downloadsBytes += Number(stat.size) || 0;
+          } catch {
+            // File missing/unreadable — just doesn't count toward the total
+          }
+        }
+      }
+    } catch {
+      // Leave downloadsBytes at whatever was accumulated so far
+    }
+
+    const otherBytes = Math.max(0, totalBytes - freeBytes - downloadsBytes);
+    return { totalBytes, freeBytes, downloadsBytes, otherBytes };
   }
 
   static async touchEntry(downloadKey: string): Promise<void> {
@@ -27,9 +73,12 @@ export class StorageManager {
 
   // Evict least-recently-used downloaded items until free space meets the target,
   // or only protected entries remain. Lessons are evicted as atomic units.
-  static async ensureFreeSpace(protectedKeys: string[] = []): Promise<void> {
+  // Returns whether free space is now above the low-space threshold — if
+  // eviction still can't clear enough room, the caller should skip the
+  // download for this run and surface a low-storage notice, per spec.
+  static async ensureFreeSpace(protectedKeys: string[] = []): Promise<boolean> {
     const free = await this.getFreeBytes();
-    if (free >= LOW_SPACE_THRESHOLD_BYTES) return;
+    if (free >= LOW_SPACE_THRESHOLD_BYTES) return true;
 
     const entries = await DownloadIndex.getAll();
     const protectedSet = new Set(protectedKeys.filter(Boolean));
@@ -43,7 +92,7 @@ export class StorageManager {
         message: `Low space (${Math.round(free / MB)} MB free) but no evictable entries`,
         level: "warning"
       });
-      return;
+      return free >= LOW_SPACE_THRESHOLD_BYTES;
     }
 
     let currentFree = free;
@@ -63,6 +112,8 @@ export class StorageManager {
         level: "info"
       });
     }
+
+    return currentFree >= LOW_SPACE_THRESHOLD_BYTES;
   }
 
   private static accessTime(entry: DownloadedItemInterface): number {

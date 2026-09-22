@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ContentProviderAuthData, getProvider, TokenHelper } from "@churchapps/content-providers";
+import { TimeoutHelper } from "./TimeoutHelper";
 
 const tokenHelper = new TokenHelper();
 
@@ -95,7 +96,11 @@ export class ProviderAuthHelper {
     if (tokenHelper.isAuthValid(auth)) return auth;
 
     // Try to refresh
-    const newAuth = await tokenHelper.refreshToken(provider.config, auth);
+    const newAuth = await TimeoutHelper.withTimeout(
+      tokenHelper.refreshToken(provider.config, auth),
+      15000,
+      "token refresh"
+    );
     if (newAuth) {
       await this.setAuth(providerId, newAuth);
       return newAuth;

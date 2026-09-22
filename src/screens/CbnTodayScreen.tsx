@@ -1,12 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableHighlight, ActivityIndicator, Image, BackHandler } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, TouchableHighlight, ActivityIndicator, Image, BackHandler, ScrollView, AppState } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTranslation } from "react-i18next";
 import LinearGradient from "react-native-linear-gradient";
-import { CachedData, ProviderAuthHelper, Styles, Colors, Typography } from "../helpers";
+import { CachedData, ProviderAuthHelper, Styles, Colors, Typography, CbnAutoDownload, TimeoutHelper } from "../helpers";
 import { DimensionHelper } from "../helpers/DimensionHelper";
 import { getProvider } from "../providers";
+import { MenuHeader } from "../components";
 import type { ContentFile, TodayLesson } from "@churchapps/content-providers";
+
+const K6_ROBOT_IMAGE = require("../images/k6-robot.png");
+const PRESCHOOL_ROBOT_IMAGE = require("../images/preschool-robot.png");
+
+// Formats today's date as e.g. "August 24, 2026", matching the client
+// reference design's header date display.
+const formatTodayDate = () => {
+  const d = new Date();
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+};
 
 type Props = {
   navigateTo(page: string, data?: any): void;
@@ -51,19 +62,45 @@ export const CbnTodayScreen = (props: Props) => {
 
   const playLesson = (lesson: TodayLesson, startIndex: number = 0) => {
     CachedData.messageFiles = lesson.files.map(toMessageFile);
-    props.navigateTo("player", {
+    const backToData = { providerId: props.providerId, initialCategory: lesson.category ?? undefined };
+    props.navigateTo("providerDownload", {
       providerId: props.providerId,
-      providerStartIndex: startIndex,
-      streaming: true,
+      coverImage: lesson.files[startIndex]?.thumbnail || lesson.lessonThumb || lesson.courseThumb,
+      title: lesson.lessonTitle,
+      startIndex,
       folderStack: [],
       backToPage: "cbnToday",
-      backToData: { providerId: props.providerId, initialCategory: lesson.category ?? undefined }
+      backToData
     });
   };
 
   const handleSelectLesson = (lesson: TodayLesson) => {
     if (lesson.files.length > 1) {
+      // Show immediately with whatever files getTodayLesson bundled, then
+      // silently upgrade. The /today endpoint's own playlist data often
+      // lacks per-video thumbnails (confirmed against the website, which
+      // shows real images exist for these same videos) — getPlaylistByLessonId
+      // reliably includes them, same as Browse and auto-download already use.
       setPickerLesson(lesson);
+      (async () => {
+        try {
+          const provider = getProvider(props.providerId);
+          if (!provider?.getPlaylistByLessonId) return;
+          const auth = await ProviderAuthHelper.refreshIfNeeded(props.providerId);
+          const enrichedFiles = await TimeoutHelper.withTimeout(
+            provider.getPlaylistByLessonId(lesson.lessonId, auth),
+            8000,
+            "enriching lesson files with thumbnails"
+          );
+          if (enrichedFiles && enrichedFiles.length > 0) {
+            setPickerLesson(prev => (prev && prev.lessonId === lesson.lessonId ? { ...prev, files: enrichedFiles } : prev));
+          }
+        } catch (err) {
+          console.error("[CbnToday] Failed to enrich picker files with thumbnails:", err);
+          // Keep showing the original files — a video without a thumbnail
+          // is still playable, just less visually complete.
+        }
+      })();
     } else {
       playLesson(lesson, 0);
     }
@@ -95,10 +132,14 @@ export const CbnTodayScreen = (props: Props) => {
         return;
       }
       const auth = await ProviderAuthHelper.refreshIfNeeded(props.providerId);
-      const [pre, prim] = await Promise.all([
-        provider.getTodayLesson(CATEGORY_PRESCHOOL, auth),
-        provider.getTodayLesson(CATEGORY_PRIMARY, auth)
-      ]);
+      const [pre, prim] = await TimeoutHelper.withTimeout(
+        Promise.all([
+          provider.getTodayLesson(CATEGORY_PRESCHOOL, auth),
+          provider.getTodayLesson(CATEGORY_PRIMARY, auth)
+        ]),
+        8000,
+        "loading today's lessons"
+      );
 
       if (pre && !prim) {
         setPreschool(pre);
@@ -125,18 +166,57 @@ export const CbnTodayScreen = (props: Props) => {
       }
       props.navigateTo("contentBrowser", { providerId: props.providerId, folderStack: [] });
     } catch (ex) {
-      console.error("[CbnToday] Failed to load today's lessons:", ex);
-      setError(true);
-      setLoading(false);
+      console.error("[CbnToday] Failed to load today's lessons, retrying silently:", ex);
+      // No error screen — a stalled connection after the device has been
+      // idle for a while is common and usually resolves on the very next
+      // attempt. Keep the loading state up and just quietly try again
+      // rather than making the user tap a manual retry button.
+      retryTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) loadToday();
+      }, 3000);
     }
   };
 
-  useEffect(() => { loadToday(); }, [props.providerId]);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    CachedData.preventSidebarExpand = true;
+    loadToday().finally(() => {
+      CachedData.preventSidebarExpand = false;
+    });
+    // Also check for any newly scheduled lessons right now, so a lesson
+    // scheduled seconds ago starts downloading immediately rather than
+    // waiting for the next periodic background check.
+    CbnAutoDownload.run();
+  }, [props.providerId]);
+
+  // If the app has been sitting idle/backgrounded for a while, the
+  // connection can go stale. Refresh proactively the moment it's brought
+  // back to the foreground, rather than waiting for the user to tap in
+  // and hit a doomed request against a dead connection.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextState => {
+      if (nextState === "active") {
+        console.log("[CbnToday] App resumed — refreshing today's lessons");
+        loadToday();
+      }
+    });
+    return () => subscription.remove();
+  }, [props.providerId]);
 
   if (loading) {
     return (
       <View style={{ ...Styles.menuScreen, flex: 1 }}>
-        <LinearGradient colors={["#1a0f17", "#160a14", "#100714"]} style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}>
+        <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: Typography.bodyMedium, marginTop: DimensionHelper.hp("3%") }}>
             {t("cbnToday.loading", "Checking today's lessons...")}
@@ -149,7 +229,7 @@ export const CbnTodayScreen = (props: Props) => {
   if (error) {
     return (
       <View style={{ ...Styles.menuScreen, flex: 1 }}>
-        <LinearGradient colors={["#1a0f17", "#160a14", "#100714"]} style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}>
+        <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}>
           <Text style={{ ...Styles.whiteText, marginBottom: DimensionHelper.hp("2%") }}>
             {t("cbnToday.loadFailed", "Couldn't load today's lessons.")}
           </Text>
@@ -169,151 +249,280 @@ export const CbnTodayScreen = (props: Props) => {
   // A lesson with multiple videos: show each one as a selectable card,
   // styled to match ContentBrowserScreen's file cards exactly.
   if (pickerLesson) {
+    const provider = getProvider(props.providerId);
+    const categoryDisplayName = (category: number | null) => {
+      if (category === CATEGORY_PRIMARY) return t("cbnToday.primaryCategory", "Primary School");
+      if (category === CATEGORY_PRESCHOOL) return t("cbnToday.preschoolCategory", "Preschool");
+      return "";
+    };
+    const breadcrumbs = [
+      provider?.name || "CBN",
+      categoryDisplayName(pickerLesson.category),
+      pickerLesson.courseTitle,
+      pickerLesson.lessonTitle
+    ].filter(Boolean);
+
     return (
       <View style={{ ...Styles.menuScreen, flex: 1 }}>
-        <LinearGradient colors={["#1a0f17", "#160a14", "#100714"]} style={{ flex: 1, width: "100%", padding: DimensionHelper.wp("2%") }}>
-          <Text style={{ ...Styles.H2, textAlign: "center", marginBottom: DimensionHelper.hp("3%") }}>
-            {pickerLesson.lessonTitle}
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center" }}>
-            {pickerLesson.files.map((file, index) => (
-              <TouchableHighlight
-                key={file.id}
-                testID={`cbn-today-video-${index}${focusedId === file.id ? "-focused" : ""}`}
-                style={{
-                  width: DimensionHelper.wp("18%"),
-                  marginHorizontal: DimensionHelper.wp("1%"),
-                  marginBottom: DimensionHelper.hp("3%"),
-                  padding: 10,
-                  borderRadius: CARD_BORDER_RADIUS,
-                  ...focusStyle(file.id)
-                }}
-                underlayColor={Colors.pressedBackground}
-                onPress={() => playLesson(pickerLesson, index)}
-                onFocus={() => setFocusedId(file.id)}
-                onBlur={() => setFocusedId(prev => (prev === file.id ? null : prev))}
-                hasTVPreferredFocus={index === 0}
-              >
-                <View style={{ width: "100%" }}>
-                  <View style={{ position: "relative" }}>
-                    {file.thumbnail ? (
-                      <Image
-                        style={{ height: CARD_IMAGE_HEIGHT, width: "100%", borderRadius: CARD_BORDER_RADIUS }}
-                        resizeMode="contain"
-                        source={{ uri: file.thumbnail }}
-                      />
-                    ) : (
-                      <View
-                        style={{
-                          height: CARD_IMAGE_HEIGHT,
-                          width: "100%",
-                          borderRadius: CARD_BORDER_RADIUS,
-                          backgroundColor: Colors.backgroundCard,
-                          justifyContent: "center",
-                          alignItems: "center"
-                        }}>
-                        <Icon name="play-circle-outline" size={DimensionHelper.wp("4%")} color="rgba(255,255,255,0.5)" />
-                      </View>
-                    )}
-                    {file.thumbnail && (
-                      <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
-                        <View style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 30, padding: 8 }}>
-                          <Icon name="play-arrow" size={DimensionHelper.wp("3%")} color="#fff" />
-                        </View>
-                      </View>
-                    )}
+        <MenuHeader
+          headerText={pickerLesson.lessonTitle}
+          badgeText={t("cbnToday.currentLesson", "Current Lesson")}
+          dateText={formatTodayDate()}
+        />
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            alignItems: "center",
+            paddingHorizontal: DimensionHelper.wp("2.5%"),
+            paddingVertical: DimensionHelper.hp("1%"),
+            backgroundColor: Colors.surfaceDark
+          }}>
+          {breadcrumbs.map((crumb, idx) => {
+            const isLast = idx === breadcrumbs.length - 1;
+            return (
+              <View key={`${crumb}-${idx}`} style={{ flexDirection: "row", alignItems: "center" }}>
+                {isLast ? (
+                  <View
+                    style={{
+                      backgroundColor: Colors.surface,
+                      borderRadius: 20,
+                      paddingVertical: DimensionHelper.hp("0.6%"),
+                      paddingHorizontal: DimensionHelper.wp("1.5%")
+                    }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: Colors.textPrimary,
+                        fontSize: Typography.labelLarge,
+                        fontWeight: "600"
+                      }}>
+                      {crumb}
+                    </Text>
                   </View>
+                ) : (
                   <Text
-                    style={{ color: "#fff", fontSize: DimensionHelper.wp("1.2%"), marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
-                    numberOfLines={2}>
-                    {file.title}
+                    numberOfLines={1}
+                    style={{
+                      color: Colors.textSubtle,
+                      fontSize: Typography.labelLarge,
+                      fontWeight: "400"
+                    }}>
+                    {crumb}
                   </Text>
+                )}
+                {!isLast && (
+                  <Text
+                    style={{
+                      color: Colors.textDimmed,
+                      fontSize: Typography.labelLarge,
+                      marginHorizontal: DimensionHelper.wp("0.6%")
+                    }}>
+                    ›
+                  </Text>
+                )}
+              </View>
+            );
+          })}
+          <View style={{ flex: 1 }} />
+          {pickerLesson.lessonNumber && (
+            <View
+              style={{
+                backgroundColor: Colors.primary,
+                borderRadius: 20,
+                paddingVertical: DimensionHelper.hp("0.6%"),
+                paddingHorizontal: DimensionHelper.wp("1.5%")
+              }}>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: "#fff",
+                  fontSize: Typography.labelLarge,
+                  fontWeight: "700"
+                }}>
+                {t("cbnToday.lessonNumber", "Lesson {{number}}", { number: pickerLesson.lessonNumber })}
+              </Text>
+            </View>
+          )}
+        </View>
+        <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%" }}>
+          <ScrollView contentContainerStyle={{ padding: DimensionHelper.wp("2%") }}>
+          {Array.from({ length: Math.ceil(pickerLesson.files.length / 3) }, (_, rowIndex) => (
+            <View key={`row-${rowIndex}`} style={{ flexDirection: "row" }}>
+            {pickerLesson.files.slice(rowIndex * 3, rowIndex * 3 + 3).map((file, colIndex) => {
+              const index = rowIndex * 3 + colIndex;
+              const isVideo = file.mediaType === "video";
+              const isFocused = focusedId === file.id;
+              return (
+                <View
+                  key={file.id}
+                  style={{
+                    flex: 1,
+                    maxWidth: "31%",
+                    marginHorizontal: DimensionHelper.wp("1%"),
+                    marginBottom: DimensionHelper.hp("3%")
+                  }}
+                >
+                  <TouchableHighlight
+                    testID={`cbn-today-video-${index}${isFocused ? "-focused" : ""}`}
+                    underlayColor={Colors.pressedBackground}
+                    onPress={() => playLesson(pickerLesson, index)}
+                    onFocus={() => setFocusedId(file.id)}
+                    onBlur={() => setFocusedId(prev => (prev === file.id ? null : prev))}
+                    hasTVPreferredFocus={index === 0}
+                  >
+                    <View style={{
+                      width: "100%",
+                      borderRadius: CARD_BORDER_RADIUS,
+                      overflow: "hidden",
+                      borderWidth: 4,
+                      borderColor: isFocused ? Colors.primary : "transparent"
+                    }}>
+                      <View style={{ position: "relative" }}>
+                        {file.thumbnail ? (
+                          <Image
+                            style={{ height: CARD_IMAGE_HEIGHT, width: "100%" }}
+                            resizeMode="cover"
+                            source={{ uri: file.thumbnail }}
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              height: CARD_IMAGE_HEIGHT,
+                              width: "100%",
+                              backgroundColor: Colors.backgroundCard,
+                              justifyContent: "center",
+                              alignItems: "center"
+                            }}>
+                            <Icon name="play-circle-outline" size={DimensionHelper.wp("4%")} color="rgba(255,255,255,0.5)" />
+                          </View>
+                        )}
+                        {isVideo && file.thumbnail && (
+                          <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
+                            <View style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 30, padding: 8 }}>
+                              <Icon name="play-arrow" size={DimensionHelper.wp("3%")} color="#fff" />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                      <Text
+                        style={{ color: "#fff", fontSize: Typography.labelMedium, marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
+                        numberOfLines={2}
+                        ellipsizeMode="tail">
+                        {file.title}
+                      </Text>
+                      <Text
+                        style={{ color: "rgba(255,255,255,0.5)", fontSize: Typography.labelSmall, textAlign: "center" }}>
+                        {isVideo ? t("contentBrowser.fileType.video") : t("contentBrowser.fileType.image")}
+                      </Text>
+                    </View>
+                  </TouchableHighlight>
                 </View>
-              </TouchableHighlight>
-            ))}
-          </View>
+              );
+            })}
+            </View>
+          ))}
+          </ScrollView>
         </LinearGradient>
       </View>
     );
   }
 
-  // Both categories scheduled today — let the leader pick which one plays,
-  // styled to match ContentBrowserScreen's folder cards.
+  // Both categories scheduled today — let the leader pick which one plays.
+  // Shows the real course/lesson image plus episode + lesson details,
+  // matching the scheduler's own card layout (e.g. "Ep. 111 — He is Risen" /
+  // "Lesson 1: Jesus Forgives My Sins").
+  // Static branding tile per client design: shows the curriculum's mascot
+  // icon + a two-line brand/category label, instead of previewing today's
+  // specific episode thumbnail/title. `lesson` is still used to gate
+  // selection (guard against selecting an empty category) but no longer
+  // drives what's displayed on the tile itself.
   const categoryTile = (
     id: string,
-    label: string,
-    lessonTitle: string | undefined,
+    brandName: string,
+    curriculumLabel: string,
+    robotImage: any,
+    lesson: TodayLesson | null,
     onPress: () => void,
     autoFocus: boolean
-  ) => (
-    <TouchableHighlight
-      testID={`cbn-today-${id}${focusedId === id ? "-focused" : ""}`}
-      style={{
-        width: DimensionHelper.wp("22%"),
-        marginHorizontal: DimensionHelper.wp("2%"),
-        padding: 10,
-        borderRadius: CARD_BORDER_RADIUS,
-        ...focusStyle(id)
-      }}
-      underlayColor={Colors.pressedBackground}
-      onPress={onPress}
-      onFocus={() => setFocusedId(id)}
-      onBlur={() => setFocusedId(prev => (prev === id ? null : prev))}
-      hasTVPreferredFocus={autoFocus}
-    >
-      <View style={{ width: "100%" }}>
-        <View
-          style={{
-            height: CARD_IMAGE_HEIGHT,
-            width: "100%",
-            borderRadius: CARD_BORDER_RADIUS,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: Colors.surface,
-            borderWidth: 1,
-            borderColor: Colors.borderSubtle
-          }}>
-          <Icon name="school" size={DimensionHelper.wp("8%")} color="rgba(255,255,255,0.4)" />
-          <Text
+  ) => {
+    return (
+      <TouchableHighlight
+        testID={`cbn-today-${id}${focusedId === id ? "-focused" : ""}`}
+        style={{
+          width: DimensionHelper.wp("26%"),
+          marginHorizontal: DimensionHelper.wp("2%")
+        }}
+        underlayColor="transparent"
+        onPress={onPress}
+        onFocus={() => setFocusedId(id)}
+        onBlur={() => setFocusedId(prev => (prev === id ? null : prev))}
+        hasTVPreferredFocus={autoFocus}
+      >
+        <View style={{ width: "100%" }}>
+          <View
             style={{
-              color: "rgba(255,255,255,0.7)",
-              fontSize: DimensionHelper.wp("1.5%"),
-              textAlign: "center",
-              paddingHorizontal: 12,
-              marginTop: DimensionHelper.hp("1.5%")
-            }}
-            numberOfLines={2}>
-            {label}
+              height: CARD_IMAGE_HEIGHT,
+              width: "100%",
+              borderRadius: CARD_BORDER_RADIUS,
+              backgroundColor: Colors.backgroundCard,
+              justifyContent: "center",
+              alignItems: "center",
+              overflow: "hidden",
+              ...focusStyle(id)
+            }}>
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+              source={robotImage}
+            />
+          </View>
+          <Text
+            style={{ color: "#fff", fontSize: DimensionHelper.wp("1.3%"), marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
+            numberOfLines={1}>
+            {brandName}
           </Text>
+          <Text
+            style={{ color: "rgba(255,255,255,0.6)", fontSize: DimensionHelper.wp("1.1%"), marginTop: 2, textAlign: "center" }}
+            numberOfLines={1}>
+            {curriculumLabel}
+          </Text>
+          {!lesson && (
+            <Text
+              style={{ color: "rgba(255,255,255,0.4)", fontSize: DimensionHelper.wp("1%"), marginTop: DimensionHelper.hp("0.5%"), textAlign: "center", paddingHorizontal: DimensionHelper.wp("1%") }}>
+              {t("cbnToday.notScheduled", "No adventures scheduled yet. Schedule a new lesson to plan your children's next adventure.")}
+            </Text>
+          )}
         </View>
-        <Text
-          style={{ color: "#fff", fontSize: DimensionHelper.wp("1.2%"), marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
-          numberOfLines={2}>
-          {lessonTitle}
-        </Text>
-      </View>
-    </TouchableHighlight>
-  );
+      </TouchableHighlight>
+    );
+  };
 
   return (
     <View style={{ ...Styles.menuScreen, flex: 1 }}>
-      <LinearGradient colors={["#1a0f17", "#160a14", "#100714"]} style={{ flex: 1, width: "100%", alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ ...Styles.H2, marginBottom: DimensionHelper.hp("4%") }}>
-          {t("cbnToday.chooseCategory", "Which lesson today?")}
-        </Text>
+      <MenuHeader
+        headerText={t("cbnToday.chooseCategory", "Which age group are you teaching?")}
+        badgeText={t("cbnToday.currentLesson", "Current Lesson")}
+        dateText={formatTodayDate()}
+      />
+      <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%", alignItems: "flex-start", justifyContent: "flex-start", paddingTop: DimensionHelper.hp("4%"), paddingLeft: DimensionHelper.wp("2%") }}>
         <View style={{ flexDirection: "row" }}>
           {categoryTile(
-            "preschool",
-            t("cbnToday.preSchool", "Pre-School"),
-            preschool?.lessonTitle,
-            () => preschool && handleSelectLesson(preschool),
+            "primary",
+            t("cbnToday.k6Brand", "Superbook Academy"),
+            t("cbnToday.k6Curriculum", "K-6 Curriculum"),
+            K6_ROBOT_IMAGE,
+            primary,
+            () => primary && handleSelectLesson(primary),
             true
           )}
           {categoryTile(
-            "primary",
-            t("cbnToday.primarySchool", "Primary School"),
-            primary?.lessonTitle,
-            () => primary && handleSelectLesson(primary),
+            "preschool",
+            t("cbnToday.preschoolBrand", "GizmoGo!"),
+            t("cbnToday.preschoolCurriculum", "Preschool Curriculum"),
+            PRESCHOOL_ROBOT_IMAGE,
+            preschool,
+            () => preschool && handleSelectLesson(preschool),
             false
           )}
         </View>

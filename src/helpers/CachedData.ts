@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MessageFileInterface, CurrentPlan } from "@churchapps/content-providers";
+
+export type ProviderSettings = { libraryEnabled: boolean; cbnAutoDownloadEnabled?: boolean };
 import RNFS from "react-native-fs";
 import * as Sentry from "@sentry/react-native";
 
@@ -13,7 +15,7 @@ export class CachedData {
 
   static totalCachableItems: number = 0;
   static cachedItems: number = 0;
-  static cachePath = RNFS.CachesDirectoryPath;
+  static cachePath = RNFS.DocumentDirectoryPath;
 
   // Byte-level progress tracking
   static totalBytes: number = 0;
@@ -24,10 +26,21 @@ export class CachedData {
   static preventSidebarExpand = false;
   static resolution: "720" | "1080" = "720";
 
+  // In-progress background downloads (e.g. CbnAutoDownload), keyed by
+  // downloadKey. DownloadsScreen polls this to show a live "Downloading..."
+  // card with a blurred thumbnail, distinct from DownloadIndex's *completed*
+  // entries. Progress is 0-100.
+  static downloadingEntries: Record<string, { title: string; image?: string; progress: number; filesCached?: number; filesTotal?: number }> = {};
+  static pendingEntries: Record<string, { title: string; image?: string }> = {};
+  static lowStorageNotice: boolean = false;
+  // UC-D-03: defaults true (active) so a fresh install isn't wrongly
+  // blocked before the first real membership check has completed.
+  static membershipActive: boolean = true;
+
   // Content provider state
   static connectedProviders: string[] = [];
   static activeProvider: string | null = null;
-  static providerSettings: Record<string, { libraryEnabled: boolean }> = {};
+  static providerSettings: Record<string, ProviderSettings> = {};
 
   // Focus memory: stores last focused item index per screen key
   static lastFocusedIndex: { [screenKey: string]: number } = {};
@@ -123,7 +136,14 @@ export class CachedData {
     if (!url) return "";
     const parts = url.split("?")[0].split("/");
     parts.splice(0, 3);
-    let fullPath = RNFS.CachesDirectoryPath + "/" + parts.join("/");
+    // Persistent app storage — NOT the cache directory. Android is free to
+    // silently wipe cache-directory files under storage pressure with no
+    // warning, which would mean a user's offline-downloaded lesson could
+    // vanish without anyone knowing until they tried to play it. Downloaded
+    // videos are meant to be reliably available offline, so they live here
+    // instead. See CachedData.migrateCacheToDocuments() for the one-time
+    // migration of anything downloaded before this change.
+    let fullPath = RNFS.DocumentDirectoryPath + "/" + parts.join("/");
     // External video URLs from lessons.church have no file extension (e.g. /externalVideos/download/9DgTnt_fXPu).
     // iOS AVFoundation needs a file extension to detect the media format, so append .mp4.
     const lastSegment = parts[parts.length - 1] || "";
@@ -131,6 +151,61 @@ export class CachedData {
       fullPath += ".mp4";
     }
     return fullPath;
+  }
+
+  /**
+   * One-time migration for devices that downloaded videos before storage
+   * moved from the cache directory to persistent document storage. Scans
+   * every account's download index (they're namespaced per-identity — see
+   * DownloadIndex.getStorageKey), and moves any file still sitting at its
+   * old cache-directory location to its new persistent location, so
+   * existing downloads survive the update instead of silently
+   * disappearing and needing a re-download.
+   */
+  static async migrateCacheToDocuments(): Promise<void> {
+    try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const downloadIndexKeys = allKeys.filter(k => k.startsWith("downloadIndex_"));
+
+      for (const key of downloadIndexKeys) {
+        const raw = await AsyncStorage.getItem(key);
+        if (!raw) continue;
+        let entries: any[];
+        try {
+          entries = JSON.parse(raw);
+        } catch {
+          continue;
+        }
+        if (!Array.isArray(entries)) continue;
+
+        for (const entry of entries) {
+          for (const f of entry.messageFiles || []) {
+            if (!f.url) continue;
+            const newPath = decodeURIComponent(this.getFilePath(f.url));
+            const oldPath = newPath.replace(RNFS.DocumentDirectoryPath, RNFS.CachesDirectoryPath);
+            if (oldPath === newPath) continue;
+
+            try {
+              const newExists = await RNFS.exists(newPath);
+              if (newExists) continue; // already migrated
+
+              const oldExists = await RNFS.exists(oldPath);
+              if (!oldExists) continue; // nothing to migrate for this file
+
+              const idx = newPath.lastIndexOf("/");
+              const folder = newPath.substring(0, idx);
+              if (!(await RNFS.exists(folder))) await RNFS.mkdir(folder);
+              await RNFS.moveFile(oldPath, newPath);
+              console.log(`[CachedData] Migrated downloaded file to persistent storage: ${newPath}`);
+            } catch (fileErr) {
+              console.error(`[CachedData] Failed to migrate file ${f.url}:`, fileErr);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[CachedData] Cache-to-Documents migration failed:", err);
+    }
   }
 
   static async load(file: MessageFileInterface, fileProgressCallback?: (progress: number) => void) {

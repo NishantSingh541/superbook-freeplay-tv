@@ -4,10 +4,17 @@ import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { SvgUri } from "react-native-svg";
 import { DimensionHelper } from "../helpers/DimensionHelper";
-import { Styles, CachedData, Colors, Typography, ProviderAuthHelper, ProviderSettingsHelper } from "../helpers";
+import { Styles, CachedData, Colors, Typography, ProviderAuthHelper, ProviderSettingsHelper, StorageManager } from "../helpers";
+import type { StorageUsage } from "../helpers/StorageManager";
 import { MenuHeader } from "../components";
 import { getProvider, FREEPLAY_PROVIDER_IDS, getAvailableProviders } from "../providers";
 import { isLocked } from "../branding";
+const authScreenFor = (p: ReturnType<typeof getProvider>) => {
+  const authType = p?.authTypes?.[0];
+  return authType === "oauth_pkce" ? "providerOAuth"
+    : authType === "form_login" ? "providerFormLogin"
+      : "providerDeviceAuth";
+};
 import { ProviderInfo } from "../interfaces";
 
 type Props = {
@@ -24,19 +31,39 @@ export const ProviderSettingsScreen = (props: Props) => {
   const provider = getProvider(props.providerId);
   const providerInfo: ProviderInfo | undefined = getAvailableProviders(FREEPLAY_PROVIDER_IDS).find(p => p.id === props.providerId);
 
-  const [libraryEnabled, setLibraryEnabled] = useState<boolean>(true);
   const [autoDownloadEnabled, setAutoDownloadEnabled] = useState<boolean>(false);
   const [focusedRow, setFocusedRow] = useState<RowKey | null>(null);
+  const [usage, setUsage] = useState<StorageUsage | null>(null);
 
-  const supportsAutoDownload = !!provider?.getCurrentPlan;
+  const LOW_SPACE_ALERT_BYTES = 500 * 1024 * 1024; // matches StorageManager's own low-space threshold
+
+  useEffect(() => {
+    let active = true;
+    StorageManager.getUsage().then(result => {
+      if (active) setUsage(result);
+    });
+    return () => { active = false; };
+  }, []);
+
+  // Two independent auto-download mechanisms exist:
+  //  - getCurrentPlan providers use a single global "current plan" slot
+  //    (ProviderSettingsHelper.isAutoDownloadEnabled/setAutoDownloadEnabled).
+  //  - getTodayLesson providers (e.g. CBN) have their own real per-provider
+  //    flag + background job (CbnAutoDownload), since multiple such
+  //    providers could coexist without a shared global slot.
+  const usesPlanAutoDownload = !!provider?.getCurrentPlan;
+  const usesCbnAutoDownload = !!provider?.getTodayLesson;
+  const supportsAutoDownload = usesPlanAutoDownload || usesCbnAutoDownload;
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const lib = await ProviderSettingsHelper.getLibraryEnabled(props.providerId);
       if (!active) return;
-      setLibraryEnabled(lib);
-      setAutoDownloadEnabled(ProviderSettingsHelper.isAutoDownloadEnabled(props.providerId));
+      if (usesCbnAutoDownload) {
+        setAutoDownloadEnabled(await ProviderSettingsHelper.isCbnAutoDownloadEnabled(props.providerId));
+      } else {
+        setAutoDownloadEnabled(ProviderSettingsHelper.isAutoDownloadEnabled(props.providerId));
+      }
     })();
     const backHandler = BackHandler.addEventListener("hardwareBackPress", handleBack);
     return () => {
@@ -46,21 +73,18 @@ export const ProviderSettingsScreen = (props: Props) => {
   }, [props.providerId]);
 
   const handleBack = () => {
-    // Locked forks have no picker — bounce back through splash, which routes appropriately.
     props.navigateTo(isLocked ? "splash" : "providers");
     return true;
-  };
-
-  const toggleLibrary = async () => {
-    const next = !libraryEnabled;
-    setLibraryEnabled(next);
-    await ProviderSettingsHelper.setLibraryEnabled(props.providerId, next);
   };
 
   const toggleAutoDownload = async () => {
     const next = !autoDownloadEnabled;
     setAutoDownloadEnabled(next);
-    await ProviderSettingsHelper.setAutoDownloadEnabled(props.providerId, next);
+    if (usesCbnAutoDownload) {
+      await ProviderSettingsHelper.setCbnAutoDownloadEnabled(props.providerId, next);
+    } else {
+      await ProviderSettingsHelper.setAutoDownloadEnabled(props.providerId, next);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -73,8 +97,38 @@ export const ProviderSettingsScreen = (props: Props) => {
     CachedData.connectedProviders = CachedData.connectedProviders.filter(id => id !== props.providerId);
     CachedData.clearFocusMemory(`contentBrowser_${props.providerId}`);
     if (CachedData.activeProvider === props.providerId) CachedData.activeProvider = null;
-    // Locked forks: re-route through splash so it lands on the auth screen for the locked provider.
-    props.navigateTo(isLocked ? "splash" : "providers");
+    // Route straight to this provider's auth screen instead of the picker,
+    // since disconnecting means the user needs to re-authenticate right away.
+    props.navigateTo(authScreenFor(provider), { providerId: props.providerId });
+  };
+
+  const renderAccountStatus = () => {
+    const active = CachedData.membershipActive;
+    return (
+      <View style={{
+        flexDirection: "row",
+        alignItems: "center",
+        padding: DimensionHelper.wp("1.5%"),
+        marginBottom: DimensionHelper.hp("1.5%"),
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: Colors.borderAccent,
+        backgroundColor: Colors.surface
+      }}>
+        <View style={{
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: active ? "#4caf50" : "#e53935",
+          marginRight: DimensionHelper.wp("1%")
+        }} />
+        <Text style={{ color: Colors.textPrimary, fontSize: Typography.titleLarge }}>
+          {t("providerSettings.accountStatus.label", "Account Status:")}
+          {" "}
+          {active ? t("providerSettings.accountStatus.active", "Active") : t("providerSettings.accountStatus.expired", "Expired")}
+        </Text>
+      </View>
+    );
   };
 
   const renderLogo = () => {
@@ -149,25 +203,77 @@ export const ProviderSettingsScreen = (props: Props) => {
     );
   };
 
+  const formatBytes = (bytes: number): string => {
+    if (bytes <= 0) return "0 GB";
+    const gb = bytes / (1024 * 1024 * 1024);
+    return `${gb.toFixed(1)} GB`;
+  };
+
+  const renderStorageSection = () => {
+    if (!usage || usage.totalBytes <= 0) return null;
+    const downloadsPct = (usage.downloadsBytes / usage.totalBytes) * 100;
+    const otherPct = (usage.otherBytes / usage.totalBytes) * 100;
+    const freePct = Math.max(0, 100 - downloadsPct - otherPct);
+    const isLow = usage.freeBytes < LOW_SPACE_ALERT_BYTES;
+
+    const legendItem = (color: string, label: string, bytes: number) => (
+      <View style={{ flexDirection: "row", alignItems: "center", marginRight: DimensionHelper.wp("2%"), marginTop: DimensionHelper.hp("0.8%") }}>
+        <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: color, marginRight: 6 }} />
+        <Text style={{ color: Colors.textSubtle, fontSize: Typography.bodySmall }}>{label} · {formatBytes(bytes)}</Text>
+      </View>
+    );
+
+    return (
+      <View style={{
+        padding: DimensionHelper.wp("1.5%"),
+        marginBottom: DimensionHelper.hp("1.5%"),
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: Colors.borderAccent,
+        backgroundColor: Colors.surface
+      }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: DimensionHelper.hp("1%") }}>
+          <Text style={{ color: Colors.textPrimary, fontSize: Typography.titleLarge }}>{t("providerSettings.storage.label", "Device Storage")}</Text>
+          <Text style={{ color: Colors.textSubtle, fontSize: Typography.bodySmall }}>
+            {formatBytes(usage.totalBytes - usage.freeBytes)} {t("providerSettings.storage.of", "of")} {formatBytes(usage.totalBytes)} {t("providerSettings.storage.used", "used")}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: "row", height: 14, borderRadius: 7, overflow: "hidden", backgroundColor: Colors.progressBackground }}>
+          <View style={{ width: `${downloadsPct}%`, backgroundColor: Colors.primary }} />
+          <View style={{ width: `${otherPct}%`, backgroundColor: Colors.textSubtle }} />
+          <View style={{ width: `${freePct}%`, backgroundColor: "transparent" }} />
+        </View>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+          {legendItem(Colors.primary, t("providerSettings.storage.downloads", "Downloaded Videos"), usage.downloadsBytes)}
+          {legendItem(Colors.textSubtle, t("providerSettings.storage.other", "Other"), usage.otherBytes)}
+          {legendItem(Colors.progressBackground, t("providerSettings.storage.free", "Free"), usage.freeBytes)}
+        </View>
+
+        {isLow && (
+          <View style={{ marginTop: DimensionHelper.hp("1%"), padding: DimensionHelper.wp("1.2%"), borderRadius: 6, backgroundColor: "#5c1a1a" }}>
+            <Text style={{ color: "#fff", fontSize: Typography.bodySmall }}>
+              {t("providerSettings.storage.lowSpace", "Storage is running low. Delete some downloaded videos you no longer need to free up space.")}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const headerText = providerInfo?.name || t("providerSettings.header");
 
   return (
     <View style={{ ...Styles.menuScreen }} testID="provider-settings-root">
       <View style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: Colors.borderAccent, backgroundColor: Colors.surface, paddingHorizontal: DimensionHelper.wp("1%") }}>
-        {renderLogo()}
         <View style={{ flex: 1 }}>
           <MenuHeader headerText={headerText} noBorder />
         </View>
       </View>
       <View style={{ ...Styles.menuWrapper, flex: 1, padding: DimensionHelper.wp("2%") }}>
-        {renderToggleRow(
-          "library",
-          t("providerSettings.library.label"),
-          t("providerSettings.library.description"),
-          libraryEnabled,
-          toggleLibrary,
-          true
-        )}
+        {renderStorageSection()}
+        {renderAccountStatus()}
         {supportsAutoDownload && renderToggleRow(
           "autoDownload",
           t("providerSettings.autoDownload.label"),

@@ -12,11 +12,12 @@ export interface DeviceInterface {
 
 export interface DownloadedItemInterface {
   downloadKey: string;
-  source: "provider" | "plan";
+  source: "provider" | "plan" | "cbn-schedule";
   providerId?: string;
   title?: string;
   description?: string;
   image?: string;
+  category?: number | null;
   messageFiles: MessageFileInterface[];
   downloadedAt: number;
   lastAccessedAt?: number;

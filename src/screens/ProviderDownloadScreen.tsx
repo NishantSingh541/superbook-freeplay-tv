@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, TouchableHighlight, BackHandler, ImageBackground, Animated } from "react-native";
+import { View, Text, TouchableHighlight, BackHandler, ImageBackground, Animated, ActivityIndicator } from "react-native";
 import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { DimensionHelper } from "../helpers/DimensionHelper";
@@ -17,6 +17,14 @@ type Props = {
   description?: string;
   startIndex: number;
   folderStack?: ContentFolder[];
+  /**
+   * Explicit override for where Back should return to (from this screen,
+   * or from playback after tapping Stream/the Start button). Takes
+   * priority over the folderStack-based guess in handleBack — needed for
+   * flows like CbnTodayScreen that have no real folder hierarchy.
+   */
+  backToPage?: string;
+  backToData?: any;
 };
 
 export const ProviderDownloadScreen = (props: Props) => {
@@ -25,7 +33,7 @@ export const ProviderDownloadScreen = (props: Props) => {
   const [cachedItems, setCachedItems] = React.useState(CachedData.cachedItems);
   const [currentFileProgress, setCurrentFileProgress] = React.useState(0);
   const [ready, setReady] = React.useState(false);
-  const [mode, setMode] = React.useState<"choosing" | "downloading" | "ready">("choosing");
+  const [mode, setMode] = React.useState<"checking" | "choosing" | "downloading" | "ready">("checking");
   const [focusedBtn, setFocusedBtn] = React.useState<"download" | "stream">("download");
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -48,7 +56,9 @@ export const ProviderDownloadScreen = (props: Props) => {
     props.navigateTo("player", {
       providerId: props.providerId,
       providerStartIndex: props.startIndex,
-      folderStack: props.folderStack
+      folderStack: props.folderStack,
+      backToPage: props.backToPage,
+      backToData: props.backToData
     });
   };
 
@@ -57,7 +67,9 @@ export const ProviderDownloadScreen = (props: Props) => {
       providerId: props.providerId,
       providerStartIndex: props.startIndex,
       streaming: true,
-      folderStack: props.folderStack
+      folderStack: props.folderStack,
+      backToPage: props.backToPage,
+      backToData: props.backToData
     });
   };
 
@@ -67,6 +79,12 @@ export const ProviderDownloadScreen = (props: Props) => {
   };
 
   const getContent = () => {
+    if (mode === "checking") {
+      return (
+        <ActivityIndicator size="large" color={Colors.primary} />
+      );
+    }
+
     if (mode === "choosing") {
       const btnBase = { width: DimensionHelper.wp("18%"), height: DimensionHelper.hp("7%"), borderRadius: 12, justifyContent: "center" as const, alignItems: "center" as const, borderWidth: 2 };
       const focusedStyle = { backgroundColor: Colors.primaryDark, borderColor: Colors.primary };
@@ -76,11 +94,23 @@ export const ProviderDownloadScreen = (props: Props) => {
         {props.description && (
           <Text style={{ ...Styles.smallerWhiteText, color: Colors.textLight }}>{props.description}</Text>
         )}
+        {lowStorage && (
+          <Text style={{ color: "#ff8a8a", fontSize: 13, marginTop: 4 }}>
+            {t("providerDownload.lowStorage", "Not enough storage to download this right now.")}
+          </Text>
+        )}
+        {!CachedData.membershipActive && (
+          <Text style={{ color: "#ff8a8a", fontSize: 13, marginTop: 4 }}>
+            {t("providerDownload.membershipLapsed", "Your membership has lapsed — new downloads aren't available. Streaming still works.")}
+          </Text>
+        )}
         <View style={{ flexDirection: "row", marginTop: DimensionHelper.hp("1%"), gap: DimensionHelper.wp("1%") }}>
-          <TouchableHighlight testID="pd-download-btn" style={{ ...btnBase, ...(focusedBtn === "download" ? focusedStyle : unfocusedStyle) }} underlayColor={Colors.primary} onPress={handleDownload} onFocus={() => setFocusedBtn("download")} hasTVPreferredFocus={true}>
-            <Text style={Styles.smallWhiteText} numberOfLines={1}>{t("providerDownload.download")}</Text>
-          </TouchableHighlight>
-          <TouchableHighlight testID="pd-stream-btn" style={{ ...btnBase, ...(focusedBtn === "stream" ? focusedStyle : unfocusedStyle) }} underlayColor={Colors.primary} onPress={handleStream} onFocus={() => setFocusedBtn("stream")}>
+          {CachedData.membershipActive && (
+            <TouchableHighlight testID="pd-download-btn" style={{ ...btnBase, ...(focusedBtn === "download" ? focusedStyle : unfocusedStyle) }} underlayColor={Colors.primary} onPress={handleDownload} onFocus={() => setFocusedBtn("download")} hasTVPreferredFocus={true}>
+              <Text style={Styles.smallWhiteText} numberOfLines={1}>{t("providerDownload.download")}</Text>
+            </TouchableHighlight>
+          )}
+          <TouchableHighlight testID="pd-stream-btn" style={{ ...btnBase, ...(focusedBtn === "stream" ? focusedStyle : unfocusedStyle) }} underlayColor={Colors.primary} onPress={handleStream} onFocus={() => setFocusedBtn("stream")} hasTVPreferredFocus={!CachedData.membershipActive}>
             <Text style={Styles.smallWhiteText} numberOfLines={1}>{t("providerDownload.stream")}</Text>
           </TouchableHighlight>
         </View>
@@ -126,11 +156,23 @@ export const ProviderDownloadScreen = (props: Props) => {
     );
   };
 
+  const [lowStorage, setLowStorage] = React.useState(false);
+
   const startDownload = async () => {
     const files = CachedData.messageFiles;
     if (files && files.length > 0) {
+      if (!CachedData.membershipActive) {
+        setMode("choosing");
+        return;
+      }
       setReady(false);
-      await StorageManager.ensureFreeSpace([downloadKey]);
+      const hasSpace = await StorageManager.ensureFreeSpace([downloadKey]);
+      if (!hasSpace) {
+        setLowStorage(true);
+        setMode("choosing");
+        return;
+      }
+      setLowStorage(false);
       CachedData.prefetch(files, updateCounts, updateFileProgress).then(() => {
         setReady(true);
         DownloadIndex.addEntry({
@@ -150,6 +192,10 @@ export const ProviderDownloadScreen = (props: Props) => {
   };
 
   const handleBack = () => {
+    if (props.backToPage) {
+      props.navigateTo(props.backToPage, props.backToData);
+      return;
+    }
     const stack = props.folderStack || [];
     const currentGridFolder = stack[stack.length - 1];
     // A file selected from within a browseAsGrid folder's own grid should
@@ -164,7 +210,8 @@ export const ProviderDownloadScreen = (props: Props) => {
   const init = () => {
     const backHandler = BackHandler.addEventListener("hardwareBackPress", () => { handleBack(); return true; });
 
-    // Skip choice screen if all files are already cached
+    // If the video is already fully downloaded, skip straight to
+    // playback — no Download/Stream/Start button should ever show.
     const files = CachedData.messageFiles;
     if (files && files.length > 0) {
       CachedData.allFilesCached(files).then(allCached => {
@@ -172,9 +219,13 @@ export const ProviderDownloadScreen = (props: Props) => {
           setCachedItems(files.length);
           setTotalItems(files.length);
           setReady(true);
-          setMode("ready");
+          handleStart();
+        } else {
+          setMode("choosing");
         }
       });
+    } else {
+      setMode("choosing");
     }
 
     return () => {

@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { CachedData } from "../helpers";
+import RNFS from "react-native-fs";
 import { Colors } from "../helpers/Styles";
 import { MessageFileInterface } from "../interfaces";
 import { Image, View, Text, ActivityIndicator, StyleSheet, Platform } from "react-native";
@@ -44,6 +45,41 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
     setIsLoading(true);
     setShowLoadingOverlay(false);
   }, [props.file]);
+
+  const [filePath, setFilePath] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!props.file?.url) {
+        if (!cancelled) setFilePath(null);
+        return;
+      }
+      if (props.downloaded) {
+        const localPath = decodeURIComponent(CachedData.getFilePath(props.file.url));
+        let exists = false;
+        try {
+          exists = await RNFS.exists(localPath);
+        } catch (err) {
+          console.warn("[Message] Error checking local file existence:", err);
+        }
+        if (cancelled) return;
+        if (exists) {
+          setFilePath("file://" + localPath);
+        } else {
+          console.warn("[Message] Expected downloaded file not found, falling back to streaming URL:", localPath);
+          setFilePath(props.file.url);
+          CachedData.load(props.file).then(() => {
+            console.log("[Message] Silently re-downloaded missing local file:", localPath);
+          }).catch(err => {
+            console.warn("[Message] Background re-download failed:", err);
+          });
+        }
+      } else {
+        if (!cancelled) setFilePath(props.file.url);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [props.file, props.downloaded]);
 
   // Delay showing loading overlay by 1 second to avoid flashing on quick transitions
   React.useEffect(() => {
@@ -127,8 +163,6 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
   // }
 
   const getVideo = () => {
-    const localPath = decodeURIComponent(CachedData.getFilePath(props.file.url));
-    const filePath = props.downloaded ? "file://" + localPath : props.file.url;
     return (<Video
       ref={videoRef}
       source={{ uri: filePath }}
@@ -150,8 +184,6 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
   };
 
   const getImage = () => {
-    const localPath = decodeURIComponent(CachedData.getFilePath(props.file.url));
-    const filePath = props.downloaded ? "file://" + localPath : props.file.url;
     return (<Image
       source={{ uri: filePath }}
       style={{ width: DimensionHelper.wp("100%"), height: DimensionHelper.hp("100%") }}
@@ -161,8 +193,9 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
   };
 
   const content = React.useMemo(() => {
+    if (!filePath) return null;
     return getMessageType() === "video" ? getVideo() : getImage();
-  }, [props.file, internalPaused, props.downloaded]);
+  }, [props.file, internalPaused, props.downloaded, filePath]);
 
   const loadingOverlay = (
     <View style={styles.loadingOverlay}>

@@ -11,3 +11,6 @@ export { ProviderSettingsHelper } from "./ProviderSettingsHelper";
 export { DownloadIndex } from "./DownloadIndex";
 export { StorageManager } from "./StorageManager";
 export { PlanSync } from "./PlanSync";
+export { CbnAutoDownload } from "./CbnAutoDownload";
+export { MembershipHelper } from "./MembershipHelper";
+export { TimeoutHelper } from "./TimeoutHelper";

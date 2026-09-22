@@ -2,17 +2,34 @@ import RNFS from "react-native-fs";
 import { DownloadedItemInterface } from "../interfaces";
 import { CachedData } from "./CachedData";
 
+// Same key CbnAutoDownload.clearDownloadsIfIdentityChanged() writes to —
+// duplicated as a literal here (rather than imported) to avoid a circular
+// dependency, since CbnAutoDownload already imports DownloadIndex.
+const IDENTITY_KEY = "cbn_last_identity";
+
 export class DownloadIndex {
-  private static STORAGE_KEY = "downloadIndex";
+  /**
+   * Downloads are namespaced per signed-in account identity, so switching
+   * accounts on the same device shows only that account's own downloads.
+   * A different account's downloads are hidden, not deleted — they
+   * reappear intact if that original account signs back in later.
+   */
+  private static async getStorageKey(): Promise<string> {
+    const identity = await CachedData.getAsyncStorage(IDENTITY_KEY);
+    const accountId = identity ? `${identity.userId ?? "anon"}_${identity.groupId ?? "none"}` : "default";
+    return `downloadIndex_${accountId}`;
+  }
 
   static async getAll(): Promise<DownloadedItemInterface[]> {
-    const data = await CachedData.getAsyncStorage(this.STORAGE_KEY);
+    const key = await this.getStorageKey();
+    const data = await CachedData.getAsyncStorage(key);
     if (!data || !Array.isArray(data)) return [];
     return data;
   }
 
   private static async saveAll(entries: DownloadedItemInterface[]): Promise<void> {
-    await CachedData.setAsyncStorage(this.STORAGE_KEY, entries);
+    const key = await this.getStorageKey();
+    await CachedData.setAsyncStorage(key, entries);
   }
 
   static async replaceAll(entries: DownloadedItemInterface[]): Promise<void> {

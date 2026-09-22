@@ -6,7 +6,9 @@ import {
   FlatList,
   TouchableHighlight,
   BackHandler,
-  Text
+  Text,
+  AppState,
+  Animated
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -19,9 +21,11 @@ import {
   isContentFolder,
   isContentFile
 } from "../interfaces";
-import { Styles, CachedData, ProviderAuthHelper, ProviderSettingsHelper, Colors, Typography } from "../helpers";
+import { Styles, CachedData, ProviderAuthHelper, ProviderSettingsHelper, Colors, Typography, TimeoutHelper } from "../helpers";
 import { MenuHeader, SkeletonCard, EmptyState } from "../components";
 import { getProvider } from "../providers";
+const K6_TILE_IMAGE = require("../images/k6-tile.png");
+const PRESCHOOL_TILE_IMAGE = require("../images/preschool-tile.png");
 
 const toMessageFile = (f: ContentFile) => ({
   id: f.id,
@@ -49,8 +53,18 @@ export const ContentBrowserScreen = (props: Props) => {
   const [loading, setLoading] = React.useState(true);
   const [fetching, setFetching] = React.useState(false);
   const [focusedItemId, setFocusedItemId] = React.useState<string | null>(null);
+  const [membershipLapsed, setMembershipLapsed] = React.useState(false);
   const initialFocusSet = React.useRef(false);
   const focusedIndexRef = React.useRef<number>(0);
+  // Persistent per-card scale animation, keyed by folder id, so each card's
+  // focus/blur transition animates smoothly instead of snapping instantly.
+  const scaleAnimsRef = React.useRef<Map<string, Animated.Value>>(new Map());
+  const getScaleAnim = (id: string) => {
+    if (!scaleAnimsRef.current.has(id)) {
+      scaleAnimsRef.current.set(id, new Animated.Value(1));
+    }
+    return scaleAnimsRef.current.get(id)!;
+  };
   const listRef = React.useRef<FlatList>(null);
   const requestVersionRef = React.useRef(0);
 
@@ -69,10 +83,11 @@ export const ContentBrowserScreen = (props: Props) => {
     },
     item: {
       flex: 1,
-      maxWidth: "33%",
+      maxWidth: "31%",
       alignItems: "center",
+      marginHorizontal: DimensionHelper.wp("1%"),
       padding: 10,
-      borderRadius: 12
+      borderRadius: 16
     }
   };
 
@@ -88,22 +103,49 @@ export const ContentBrowserScreen = (props: Props) => {
       return;
     }
 
+    // UC-D-03: a lapsed membership blocks catalog browsing entirely.
+    // Already-downloaded content is untouched — this only affects Browse.
+    if (!CachedData.membershipActive) {
+      setMembershipLapsed(true);
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setMembershipLapsed(false);
+
     const version = ++requestVersionRef.current;
     setLoading(true);
 
-    const auth = await ProviderAuthHelper.refreshIfNeeded(props.providerId);
-    if (version !== requestVersionRef.current) return;
+    try {
+      const auth = await ProviderAuthHelper.refreshIfNeeded(props.providerId);
+      if (version !== requestVersionRef.current) return;
 
-    const data = await provider.browse(currentFolder?.path ?? null, auth);
-    if (version !== requestVersionRef.current) return;
+      const data = await TimeoutHelper.withTimeout(
+        provider.browse(currentFolder?.path ?? null, auth),
+        8000,
+        "browsing content"
+      );
+      if (version !== requestVersionRef.current) return;
 
-    setItems(data);
-    setLoading(false);
-    // Allow sidebar to expand via focus now that content is loaded
-    CachedData.preventSidebarExpand = false;
+      setItems(data);
+      setLoading(false);
+      // Allow sidebar to expand via focus now that content is loaded
+      CachedData.preventSidebarExpand = false;
+    } catch (ex) {
+      console.error("[ContentBrowser] Failed to load content, retrying silently:", ex);
+      // No error screen — keep the loading state and quietly retry rather
+      // than leaving the screen stuck (this previously had no error
+      // handling at all, so a stalled connection left it loading forever).
+      setTimeout(() => {
+        if (version === requestVersionRef.current) loadData();
+      }, 3000);
+    }
   };
 
-  const handleSelectFolder = async (folder: ContentFolder) => {
+  const withLessonNumber = (f: ContentFolder, idx?: number): ContentFolder =>
+    idx !== undefined ? ({ ...f, lessonNumber: idx + 1 } as ContentFolder & { lessonNumber?: number }) : f;
+
+  const handleSelectFolder = async (folder: ContentFolder, index?: number) => {
     if (!provider || fetching) return;
 
     const version = ++requestVersionRef.current;
@@ -127,13 +169,13 @@ export const ContentBrowserScreen = (props: Props) => {
             coverImage: folder.thumbnail,
             title: folder.title,
             startIndex: 0,
-            folderStack: [...folderStack, folder]
+            folderStack: [...folderStack, withLessonNumber(folder, index)]
           });
         } else {
           console.warn(`[ContentBrowser] handleSelectFolder: no files for leaf "${folder.title}" — showing empty state`);
           props.navigateTo("contentBrowser", {
             providerId: props.providerId,
-            folderStack: [...folderStack, folder]
+            folderStack: [...folderStack, withLessonNumber(folder, index)]
           });
         }
         return;
@@ -152,12 +194,12 @@ export const ContentBrowserScreen = (props: Props) => {
           coverImage: folder.thumbnail,
           title: folder.title,
           startIndex: 0,
-          folderStack: [...folderStack, folder]
+          folderStack: [...folderStack, withLessonNumber(folder, index)]
         });
       } else {
         props.navigateTo("contentBrowser", {
           providerId: props.providerId,
-          folderStack: [...folderStack, folder]
+          folderStack: [...folderStack, withLessonNumber(folder, index)]
         });
       }
     } finally {
@@ -193,29 +235,62 @@ export const ContentBrowserScreen = (props: Props) => {
     const savedIndex = CachedData.lastFocusedIndex[screenKey];
     const shouldFocus = !props.sidebarExpanded && !initialFocusSet.current
       && (savedIndex !== undefined ? index === savedIndex : index === 0);
+    // Client-provided branded artwork for known category tiles, used in
+    // place of the generic provider-logo fallback.
+    const titleLower = folder.title.trim().toLowerCase();
+    const localOverrideImage = titleLower === "k-6" ? K6_TILE_IMAGE
+      : titleLower === "preschool" ? PRESCHOOL_TILE_IMAGE
+        : null;
     const folderImage = folder.thumbnail || currentFolder?.thumbnail || provider?.logos.dark;
     const isLogoFallback = !folder.thumbnail && !currentFolder?.thumbnail;
     const isSvg = folderImage?.toLowerCase().endsWith(".svg");
     const isFocused = focusedItemId === folder.id;
 
+    const scaleAnim = getScaleAnim(folder.id);
     return (
       <TouchableHighlight
         testID={`cb-folder-${folder.id}${isFocused ? "-focused" : ""}`}
-        style={{
-          ...styles.item,
-          ...(isFocused ? {
-            borderWidth: 2,
-            borderColor: Colors.primary,
-            transform: [{ scale: 1.03 }]
-          } : { borderWidth: 2, borderColor: "transparent" })
+        style={styles.item}
+        underlayColor="transparent"
+        onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFolder(folder, folderStack.length === 2 ? index : undefined); }}
+        onFocus={() => {
+          initialFocusSet.current = true;
+          focusedIndexRef.current = index;
+          CachedData.lastFocusedIndex[screenKey] = index;
+          setFocusedItemId(folder.id);
+          Animated.spring(scaleAnim, { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
-        underlayColor={Colors.pressedBackground}
-        onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFolder(folder); }}
-        onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; setFocusedItemId(folder.id); }}
-        onBlur={() => { setFocusedItemId(prev => prev === folder.id ? null : prev); }}
+        onBlur={() => {
+          setFocusedItemId(prev => prev === folder.id ? null : prev);
+          Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 6, tension: 80 }).start();
+        }}
         hasTVPreferredFocus={shouldFocus}>
-        <View style={{ width: "100%" }}>
-          {folderImage ? (
+        <Animated.View style={{
+          width: "100%",
+          borderRadius: 14,
+          overflow: "hidden",
+          transform: [{ scale: scaleAnim }],
+          borderWidth: 4,
+          borderColor: isFocused ? Colors.primary : "transparent",
+          ...(isFocused ? {
+            shadowColor: Colors.primary,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.6,
+            shadowRadius: 16,
+            elevation: 10
+          } : {})
+        }}>
+          {localOverrideImage ? (
+            <Image
+              style={{
+                height: DimensionHelper.hp("25%"),
+                width: "100%",
+                borderRadius: 12
+              }}
+              resizeMode="contain"
+              source={localOverrideImage}
+            />
+          ) : folderImage ? (
             isSvg ? (
               <View style={{
                 height: DimensionHelper.hp("25%"),
@@ -252,7 +327,7 @@ export const ContentBrowserScreen = (props: Props) => {
                   width: "100%",
                   borderRadius: 12
                 }}
-                resizeMode="contain"
+                resizeMode="cover"
                 source={{ uri: folderImage }}
               />
             )
@@ -288,18 +363,32 @@ export const ContentBrowserScreen = (props: Props) => {
             </View>
           )}
           {folderImage && (
-            <Text
-              style={{
-                color: "#fff",
-                fontSize: DimensionHelper.wp("1.2%"),
-                marginTop: DimensionHelper.hp("1%"),
-                textAlign: "center"
-              }}
-              numberOfLines={2}>
-              {folder.title}
-            </Text>
+            <>
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: DimensionHelper.wp("1.2%"),
+                  marginTop: DimensionHelper.hp("1%"),
+                  textAlign: "center"
+                }}
+                numberOfLines={2}>
+                {folder.title}
+              </Text>
+              {folderStack.length === 2 && (
+                <Text
+                  style={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: DimensionHelper.wp("1%"),
+                    marginTop: 2,
+                    textAlign: "center"
+                  }}
+                  numberOfLines={1}>
+                  {t("contentBrowser.lessonNumber", "Lesson {{number}}", { number: index + 1 })}
+                </Text>
+              )}
+            </>
           )}
-        </View>
+        </Animated.View>
       </TouchableHighlight>
     );
   };
@@ -317,9 +406,14 @@ export const ContentBrowserScreen = (props: Props) => {
         style={{
           ...styles.item,
           ...(isFocused ? {
-            borderWidth: 2,
-            borderColor: Colors.primary,
-            transform: [{ scale: 1.03 }]
+            backgroundColor: Colors.primary,
+            borderRadius: 16,
+            transform: [{ scale: 1.05 }],
+            shadowColor: Colors.primary,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.6,
+            shadowRadius: 20,
+            elevation: 12
           } : { borderWidth: 2, borderColor: "transparent" })
         }}
         underlayColor={Colors.pressedBackground}
@@ -434,6 +528,10 @@ export const ContentBrowserScreen = (props: Props) => {
       );
     }
 
+    if (membershipLapsed) {
+      return <EmptyState icon="lock-outline" message={t("contentBrowser.membershipLapsed", "Your membership has lapsed")} subMessage={t("contentBrowser.membershipLapsedSub", "Renew your membership to browse the catalog. Previously downloaded lessons are still available in Downloads.")} />;
+    }
+
     if (items.length === 0) {
       return <EmptyState icon="folder-open" message={t("contentBrowser.noContent")} subMessage={t("contentBrowser.tryDifferentFolder")} />;
     }
@@ -498,7 +596,22 @@ export const ContentBrowserScreen = (props: Props) => {
 
   useEffect(init, [currentFolder?.id, props.providerId]);
 
-  let headerText = provider?.name || t("contentBrowser.header");
+  // Refresh proactively when the app returns to the foreground, so a
+  // stale connection from being backgrounded doesn't leave Browse showing
+  // outdated data or a doomed first request.
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", nextState => {
+      if (nextState === "active") {
+        loadData();
+      }
+    });
+    return () => subscription.remove();
+  }, [currentFolder?.id, props.providerId]);
+
+  // Root level (no folder drilled into yet) shows a generic "Browse All
+  // Lessons" heading instead of the provider's display name, per client
+  // request — sub-folder screens still show their own titles below.
+  let headerText = t("contentBrowser.browseAllLessons", "Browse All Lessons");
   if (currentFolder) {
     headerText = currentFolder.title;
   }
@@ -522,15 +635,35 @@ export const ContentBrowserScreen = (props: Props) => {
             const isLast = idx === breadcrumbs.length - 1;
             return (
               <View key={`${crumb}-${idx}`} style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: isLast ? Colors.textPrimary : Colors.textSubtle,
-                    fontSize: Typography.labelLarge,
-                    fontWeight: isLast ? "600" : "400"
-                  }}>
-                  {crumb}
-                </Text>
+                {isLast ? (
+                  <View
+                    style={{
+                      backgroundColor: Colors.surface,
+                      borderRadius: 20,
+                      paddingVertical: DimensionHelper.hp("0.6%"),
+                      paddingHorizontal: DimensionHelper.wp("1.5%")
+                    }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: Colors.textPrimary,
+                        fontSize: Typography.labelLarge,
+                        fontWeight: "600"
+                      }}>
+                      {crumb}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: Colors.textSubtle,
+                      fontSize: Typography.labelLarge,
+                      fontWeight: "400"
+                    }}>
+                    {crumb}
+                  </Text>
+                )}
                 {!isLast && (
                   <Text
                     style={{
@@ -544,6 +677,26 @@ export const ContentBrowserScreen = (props: Props) => {
               </View>
             );
           })}
+          <View style={{ flex: 1 }} />
+          {(currentFolder as any)?.lessonNumber && (
+            <View
+              style={{
+                backgroundColor: Colors.primary,
+                borderRadius: 20,
+                paddingVertical: DimensionHelper.hp("0.6%"),
+                paddingHorizontal: DimensionHelper.wp("1.5%")
+              }}>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: "#fff",
+                  fontSize: Typography.labelLarge,
+                  fontWeight: "700"
+                }}>
+                {t("contentBrowser.lessonNumber", "Lesson {{number}}", { number: (currentFolder as any).lessonNumber })}
+              </Text>
+            </View>
+          )}
         </View>
       )}
       <View style={{ ...Styles.menuWrapper, flex: 90 }}>{getCards()}</View>
