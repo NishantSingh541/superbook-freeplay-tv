@@ -81,7 +81,7 @@ module.exports = () => {
     name: branding.appName,
     slug: branding.slug,
     version: branding.version,
-    orientation: isTvBuild ? "landscape" : "default",
+    orientation: "default",
     icon: "./assets/images/icon.png",
     scheme: branding.scheme,
     userInterfaceStyle: "automatic",
@@ -136,9 +136,22 @@ module.exports = () => {
     },
     runtimeVersion: "1.2.0",
     updates: {
+      // Disabled for release builds: this fork shares ChurchApps' original
+      // EAS projectId/updatesUrl, so any update THEY publish would silently
+      // overwrite all local customizations at every app launch, with zero
+      // warning. Re-enable fully only after pointing branding.eas.updatesUrl
+      // at our own EAS project.
+      //
+      // IMPORTANT: `enabled: false` also blocks Metro/dev-client bundle
+      // loading at the native level (expo-updates intercepts bundle loading
+      // regardless of BuildConfig.DEBUG), so it must stay `true` for local
+      // development builds or the app will always load a stale embedded
+      // bundle and never reach Metro. Safe either way during dev: no OTA
+      // update can be pushed unless someone runs `eas update` against this
+      // project, which we don't do.
       url: branding.eas.updatesUrl,
-      enabled: true,
-      checkAutomatically: "ON_LOAD",
+      enabled: process.env.EXPO_PUBLIC_DEV_CLIENT === "1" ? true : false,
+      checkAutomatically: "NEVER",
       fallbackToCacheTimeout: 5000,
       requestHeaders: {
         "expo-channel-name": "production"

@@ -1,5 +1,5 @@
 {
-  "appName": "FreePlay",
+  "appName": "Superbook Play",
   "slug": "freeplay",
   "scheme": "church.freeplay",
   "owner": "churchapps",
@@ -20,7 +20,7 @@
     "organization": "churchapps",
     "project": "freeplay"
   },
-"providerIds": [
+  "providerIds": [
     "signpresenter",
     "lessonschurch",
     "b1church",
@@ -31,16 +31,16 @@
     "cbn"
   ],
   "colors": {
-    "primary": "#E91E63",
+    "primary": "#cb151b",
     "primaryLight": "#f48fb1",
-    "primaryDark": "#c2185b",
-    "background": "#1a0f17",
+    "primaryDark": "#8e0f14",
+    "background": "#12171f",
     "backgroundDark": "#000000",
-    "backgroundCard": "#2d1f2d",
-    "surface": "#1a1118",
-    "surfaceDark": "#120b11",
-    "navBackground": "#1a0b1a",
-    "inputBackground": "#100714"
+    "backgroundCard": "#1e2836",
+    "surface": "#161c26",
+    "surfaceDark": "#0d1117",
+    "navBackground": "#0f1621",
+    "inputBackground": "#0b1017"
   },
   "tvosSubmit": {
     "ascAppId": "6758970546",
