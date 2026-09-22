@@ -1,10 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CachedData } from "./CachedData";
+import { CachedData, ProviderSettings } from "./CachedData";
 import { PlanSync } from "./PlanSync";
 
 const SETTINGS_KEY = "provider_settings";
-
-export type ProviderSettings = { libraryEnabled: boolean };
 
 export class ProviderSettingsHelper {
   static async loadAll(): Promise<Record<string, ProviderSettings>> {
@@ -60,6 +58,36 @@ export class ProviderSettingsHelper {
 
   static isAutoDownloadEnabled(providerId: string): boolean {
     return CachedData.providerId === providerId;
+  }
+
+  /**
+   * Real, independent per-provider auto-download toggle — distinct from
+   * isAutoDownloadEnabled() above, which is tied to the older single
+   * "current plan" provider slot (getCurrentPlan) rather than a genuine
+   * per-provider flag. Used by providers like CBN (getTodayLesson) that
+   * have their own background auto-download job. Defaults to enabled.
+   */
+  static isCbnAutoDownloadEnabledSync(providerId: string): boolean {
+    const entry = CachedData.providerSettings[providerId];
+    if (!entry) return true;
+    return entry.cbnAutoDownloadEnabled !== false;
+  }
+
+  static async isCbnAutoDownloadEnabled(providerId: string): Promise<boolean> {
+    if (Object.keys(CachedData.providerSettings).length === 0) {
+      await this.loadAll();
+    }
+    return this.isCbnAutoDownloadEnabledSync(providerId);
+  }
+
+  static async setCbnAutoDownloadEnabled(providerId: string, enabled: boolean): Promise<void> {
+    try {
+      const settings = { ...CachedData.providerSettings };
+      settings[providerId] = { ...(settings[providerId] || { libraryEnabled: true }), cbnAutoDownloadEnabled: enabled };
+      await this.persist(settings);
+    } catch (error) {
+      console.error(`Error setting CBN auto-download enabled for ${providerId}:`, error);
+    }
   }
 
   static async setAutoDownloadEnabled(providerId: string, enabled: boolean): Promise<void> {

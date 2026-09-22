@@ -63,12 +63,12 @@ export const PlanDownloadScreen = (props: Props) => {
             testID="plan-download-start-btn"
             style={{
               ...Styles.smallMenuClickable,
-              backgroundColor: "#C2185B",
+              backgroundColor: Colors.primaryDark,
               width: DimensionHelper.wp("18%"),
               marginTop: DimensionHelper.hp("1%"),
               borderRadius: 5
             }}
-            underlayColor={"#E91E63"}
+            underlayColor={Colors.primary}
             onPress={() => handleStart()}
             hasTVPreferredFocus={true}
           >
@@ -235,7 +235,7 @@ export const PlanDownloadScreen = (props: Props) => {
         </ImageBackground>
       ) : (
         <LinearGradient
-          colors={["#1a0f17", "#3d1a36", "#0f0a16"]}
+          colors={[Colors.background, Colors.primaryDark, Colors.backgroundDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ flex: 1, width: "100%" }}

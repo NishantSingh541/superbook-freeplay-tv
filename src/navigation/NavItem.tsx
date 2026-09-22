@@ -36,10 +36,10 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
     }
   };
 
-  const color = props.selected ? Colors.primary : Colors.textSecondary;
+  const color = props.selected ? Colors.textPrimary : Colors.textSecondary;
 
   const iconContainer = {
-    width: DimensionHelper.wp("8%"),
+    width: DimensionHelper.wp("10%"),
     alignItems: "center",
     justifyContent: "center"
   } as any;
@@ -61,7 +61,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
         overflow: "hidden",
         alignSelf: "stretch",
         backgroundColor: props.selected
-          ? Colors.hoverBackground
+          ? Colors.primary
           : "transparent"
       }}
       hasTVPreferredFocus={isInitialMount.current && props.expanded && props.selected}
@@ -88,15 +88,15 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
             props.logoUrl.toLowerCase().endsWith(".svg") ? (
               <SvgUri
                 uri={props.logoUrl}
-                width={DimensionHelper.hp("4%")}
-                height={DimensionHelper.hp("4%")}
+                width={DimensionHelper.hp("5.5%")}
+                height={DimensionHelper.hp("5.5%")}
               />
             ) : (
               <Image
                 source={{ uri: props.logoUrl }}
                 style={{
-                  width: DimensionHelper.hp("4%"),
-                  height: DimensionHelper.hp("4%")
+                  width: DimensionHelper.hp("5.5%"),
+                  height: DimensionHelper.hp("5.5%")
                 }}
                 resizeMode="contain"
               />
@@ -105,7 +105,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
             <Icon
               name={props.icon}
               color={color}
-              size={DimensionHelper.hp("4.2%")}
+              size={DimensionHelper.hp("5.8%")}
             />
           )}
         </View>

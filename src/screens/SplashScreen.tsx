@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { View, Text, Animated, Easing } from "react-native";
 import { useTranslation } from "react-i18next";
-import { CachedData, Styles, Colors, Typography, PlanSync } from "../helpers";
+import { CachedData, Styles, Colors, Typography, PlanSync, CbnAutoDownload } from "../helpers";
 import { ProviderAuthHelper, ProviderSettingsHelper } from "../helpers";
 import { getAvailableProviders, FREEPLAY_PROVIDER_IDS, getProvider } from "../providers";
 import { isLocked, lockedProviderId } from "../branding";
@@ -40,6 +40,13 @@ export const SplashScreen = (props: Props) => {
       }
     }
     CachedData.connectedProviders = connectedProviders;
+    // App.tsx's mount-time trigger fires before connectedProviders is
+    // populated (this async check hasn't resolved yet at that point), so
+    // it always no-ops on cold start. This is the actual right place —
+    // guaranteed to run after the data it depends on is ready.
+    if (connectedProviders.includes("cbn")) {
+      CbnAutoDownload.run();
+    }
     return connectedProviders;
   };
 
@@ -55,19 +62,25 @@ export const SplashScreen = (props: Props) => {
       props.navigateTo("contentBrowser", { providerId: firstProviderId, folderStack: [] });
       return;
     }
-    if (isLocked && lockedProviderId) {
+    // Mirrors ProvidersScreen.tsx's `.filter(p => p.id === "cbn")` — only CBN
+    // is actually surfaced to users right now, even though branding.json
+    // still lists other provider IDs for future use. Keep this in sync with
+    // that filter rather than changing branding.json/isLocked, since other
+    // code may depend on the full providerIds list staying intact.
+    const effectiveLockedProviderId = isLocked ? lockedProviderId : "cbn";
+    if (effectiveLockedProviderId) {
       // White-labeled forks lock to one provider — skip the picker.
-      const provider = getProvider(lockedProviderId);
+      const provider = getProvider(effectiveLockedProviderId);
       if (provider && !provider.requiresAuth) {
-        CachedData.activeProvider = lockedProviderId;
-        props.navigateTo("contentBrowser", { providerId: lockedProviderId, folderStack: [] });
+        CachedData.activeProvider = effectiveLockedProviderId;
+        props.navigateTo("contentBrowser", { providerId: effectiveLockedProviderId, folderStack: [] });
         return;
       }
       const authType = provider?.authTypes?.[0];
       const authScreen = authType === "oauth_pkce" ? "providerOAuth"
         : authType === "form_login" ? "providerFormLogin"
           : "providerDeviceAuth";
-      props.navigateTo(authScreen, { providerId: lockedProviderId });
+      props.navigateTo(authScreen, { providerId: effectiveLockedProviderId });
       return;
     }
     props.navigateTo("providers");

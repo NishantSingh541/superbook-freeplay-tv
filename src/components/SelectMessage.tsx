@@ -119,7 +119,7 @@ export const SelectMessage = (props: Props) => {
         >
           <View style={styles.cardInner}>
             {thumbnail ? (
-              <Image source={{ uri: thumbnail }} resizeMode="cover" style={styles.image} />
+              <Image source={{ uri: thumbnail }} resizeMode="contain" style={styles.image} />
             ) : (
               <View style={[styles.image, styles.imagePlaceholder]}>
                 <Icon

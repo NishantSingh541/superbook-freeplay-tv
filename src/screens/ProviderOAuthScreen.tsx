@@ -246,7 +246,7 @@ export const ProviderOAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -272,7 +272,7 @@ export const ProviderOAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -317,7 +317,7 @@ export const ProviderOAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -350,7 +350,7 @@ export const ProviderOAuthScreen = (props: Props) => {
   return (
     <View style={Styles.menuScreen}>
       <LinearGradient
-        colors={["#1a0f17", "#160a14", "#0d0510"]}
+        colors={[Colors.background, Colors.surface, Colors.backgroundDark]}
         style={{ flex: 1, width: "100%" }}>
         <Animated.View
           style={{

@@ -13,7 +13,8 @@ import { CachedData, Styles, Colors, ProviderSettingsHelper } from "../helpers";
 import { SoundHelper } from "../helpers/SoundHelper";
 import { NavItem } from "./NavItem";
 import { getProvider } from "../providers";
-import { isLocked } from "../branding";
+import { isLocked, lockedProviderId } from "../branding";
+import { ProviderAuthHelper } from "../helpers";
 import { FreePlayLogo } from "../components";
 
 type Props = {
@@ -217,9 +218,8 @@ export const NavWrapper = (props: Props) => {
             <NavItem
               key={providerId}
               testID={`nav-item-provider-${providerId}`}
-              icon={"play-circle-outline"}
-              text={provider.name}
-              logoUrl={provider.logos?.dark}
+              icon={"search"}
+              text={t("nav.browse", "Browse")}
               expanded={props.sidebarExpanded}
               setExpanded={handleSidebarExpand}
               selected={highlightedItem === providerId}
@@ -262,7 +262,20 @@ export const NavWrapper = (props: Props) => {
             setExpanded={handleSidebarExpand}
             selected={highlightedItem === "providers"}
             onPress={() => {
-              handleClick("providers");
+              (async () => {
+                const targetId = lockedProviderId || "cbn";
+                const connected = await ProviderAuthHelper.isConnected(targetId);
+                if (connected) {
+                  props.navigateTo("providerSettings", { providerId: targetId });
+                } else {
+                  const p = getProvider(targetId);
+                  const authType = p?.authTypes?.[0];
+                  const authScreen = authType === "oauth_pkce" ? "providerOAuth"
+                    : authType === "form_login" ? "providerFormLogin"
+                      : "providerDeviceAuth";
+                  props.navigateTo(authScreen, { providerId: targetId });
+                }
+              })();
             }}
             ref={providersRef}
             nextFocusUp={findNodeHandle(downloadsRef.current)}
@@ -313,7 +326,8 @@ export const NavWrapper = (props: Props) => {
         }}>
         <View
           style={{
-            width: sidebarHidden ? DimensionHelper.wp("100%") : DimensionHelper.wp("92%"),
+            flex: 1,
+            width: "100%",
             height: DimensionHelper.hp("100%"),
             backgroundColor: "transparent"
           }}>

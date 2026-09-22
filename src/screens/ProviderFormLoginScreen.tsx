@@ -12,7 +12,7 @@ import {
   Platform
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Styles, CachedData, ProviderAuthHelper } from "../helpers";
+import { Styles, CachedData, ProviderAuthHelper, Colors } from "../helpers";
 import { SoundHelper } from "../helpers/SoundHelper";
 import { ContentProviderAuthData } from "../interfaces";
 import { DimensionHelper } from "../helpers/DimensionHelper";
@@ -112,14 +112,14 @@ export const ProviderFormLoginScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
             alignItems: "center",
             justifyContent: "center"
           }}>
-          <ActivityIndicator size="large" color="#E91E63" />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text
             style={{
               color: "rgba(255, 255, 255, 0.6)",
@@ -138,7 +138,7 @@ export const ProviderFormLoginScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -169,7 +169,7 @@ export const ProviderFormLoginScreen = (props: Props) => {
   return (
     <View style={Styles.menuScreen}>
       <LinearGradient
-        colors={["#1a0f17", "#160a14", "#0d0510"]}
+        colors={[Colors.background, Colors.surface, Colors.backgroundDark]}
         style={{ flex: 1, width: "100%" }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -295,7 +295,7 @@ export const ProviderFormLoginScreen = (props: Props) => {
                 underlayColor="rgba(233, 30, 99, 0.8)"
                 hasTVPreferredFocus={true}
                 style={{
-                  backgroundColor: "#E91E63",
+                  backgroundColor: Colors.primary,
                   paddingVertical: DimensionHelper.hp("2%"),
                   borderRadius: 8,
                   alignItems: "center"

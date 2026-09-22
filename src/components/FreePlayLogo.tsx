@@ -15,10 +15,14 @@ export const FreePlayLogo = ({
   size = "medium",
   showText = true
 }: Props) => {
+  // Sized for Superbook Academy's logo (mascot + two-line wordmark),
+  // which needs more vertical room to stay legible than FreePlay's
+  // original single-mark logo did. Width ratio matches the real ~3.2:1
+  // aspect of the wordmark artwork, not an arbitrary 4:1 guess.
   const sizes = {
-    small: { height: 30, iconSize: 30 },
-    medium: { height: 35, iconSize: 35 },
-    large: { height: 100, iconSize: 100 }
+    small: { height: 55, iconSize: 55 },
+    medium: { height: 85, iconSize: 85 },
+    large: { height: 160, iconSize: 160 }
   };
 
   const s = sizes[size];
@@ -31,7 +35,7 @@ export const FreePlayLogo = ({
       <Image
         source={logoSource}
         style={showText ? {
-          width: s.height * 4,
+          width: s.height * 3.2,
           height: s.height
         } : {
           width: s.iconSize,
@@ -54,7 +58,8 @@ export const FreePlayLogoWhite = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    justifyContent: "center"
   },
   containerExpanded: { width: "100%" }
 });

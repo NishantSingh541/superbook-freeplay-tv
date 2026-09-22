@@ -49,7 +49,13 @@ export const ProvidersScreen = (props: Props) => {
   };
 
   const loadProviders = () => {
-    const availableProviders = getAvailableProviders(FREEPLAY_PROVIDER_IDS);
+    // Display-only restriction: only CBN is shown in this grid, but
+    // FREEPLAY_PROVIDER_IDS (and Branding.providerIds/isLocked) stay
+    // untouched, so normal multi-provider navigation — Settings,
+    // Disconnect, the Auto-Download toggle — keeps working exactly as
+    // it always has once a provider is connected.
+    const availableProviders = getAvailableProviders(FREEPLAY_PROVIDER_IDS)
+      .filter(p => p.id === "cbn");
     setProviders(availableProviders);
   };
 

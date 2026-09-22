@@ -6,10 +6,13 @@ import {
   BackHandler,
   ActivityIndicator,
   Animated,
-  Easing
+  Easing,
+  Linking,
+  Pressable,
+  ScrollView
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Styles, CachedData, ProviderAuthHelper, Colors, Typography } from "../helpers";
+import { Styles, CachedData, ProviderAuthHelper, Colors, Typography, CbnAutoDownload } from "../helpers";
 import { SoundHelper } from "../helpers/SoundHelper";
 import { DeviceAuthorizationResponse, DeviceFlowState, ContentProviderAuthData, DeviceFlowHelper } from "../interfaces";
 import { DimensionHelper } from "../helpers/DimensionHelper";
@@ -167,7 +170,14 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
         return;
       }
 
-      await ProviderAuthHelper.setAuth(props.providerId, result as ContentProviderAuthData);
+      const newAuth = result as ContentProviderAuthData;
+      // Check identity BEFORE setAuth() overwrites the previously-stored
+      // auth — clears any existing CBN downloads if this pairing belongs
+      // to a genuinely different person/group than last time.
+      if (props.providerId === "cbn") {
+        await CbnAutoDownload.clearDownloadsIfIdentityChanged(newAuth);
+      }
+      await ProviderAuthHelper.setAuth(props.providerId, newAuth);
       await ProviderAuthHelper.setConnectionState(props.providerId, true);
       setFlowState({ status: "success" });
       SoundHelper.playChime();
@@ -176,6 +186,10 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
         CachedData.connectedProviders.push(props.providerId);
       }
       CachedData.activeProvider = props.providerId;
+      // Kick off an immediate background download check for providers with
+      // their own auto-download job (e.g. CBN), rather than waiting for the
+      // next periodic timer tick in App.tsx.
+      CbnAutoDownload.run();
 
       // Approver may have bound this screen to a plan type — enables "Today's Plan"
       const planTypeId = (result as { planTypeId?: string }).planTypeId;
@@ -224,7 +238,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen} testID="provider-device-auth-loading">
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -250,7 +264,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -295,7 +309,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
     return (
       <View style={Styles.menuScreen}>
         <LinearGradient
-          colors={["#1a0f17", "#160a14", "#100714"]}
+          colors={[Colors.background, Colors.surface, Colors.surfaceDark]}
           style={{
             flex: 1,
             width: "100%",
@@ -330,22 +344,28 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
   return (
     <View style={Styles.menuScreen} testID="provider-device-auth-root">
       <LinearGradient
-        colors={["#1a0f17", "#160a14", "#0d0510"]}
+        colors={[Colors.background, Colors.surface, Colors.backgroundDark]}
         style={{ flex: 1, width: "100%" }}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            alignItems: "center",
+            justifyContent: "flex-start",
+            paddingTop: DimensionHelper.hp("2%"),
+            paddingBottom: DimensionHelper.hp("2%")
+          }}
+          showsVerticalScrollIndicator={false}>
         <Animated.View
           style={{
-            flex: 1,
             alignItems: "center",
-            justifyContent: "center",
-            opacity: fadeAnim,
-            paddingBottom: DimensionHelper.hp("5%")
+            opacity: fadeAnim
           }}>
           <Text
             style={{
               color: "rgba(255, 255, 255, 0.7)",
               fontSize: DimensionHelper.wp("2.5%"),
               fontWeight: "600",
-              marginBottom: DimensionHelper.hp("2%")
+              marginBottom: DimensionHelper.hp("1%")
             }}>
             {t("providerDeviceAuth.connectTo", { name: providerConfig?.name || t("providerDeviceAuth.fallbackProvider") })}
           </Text>
@@ -355,25 +375,47 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
               color: "rgba(255, 255, 255, 0.5)",
               fontSize: DimensionHelper.wp("1.4%"),
               letterSpacing: 0.5,
-              marginBottom: DimensionHelper.hp("3%"),
+              marginBottom: DimensionHelper.hp("0.5%"),
               textAlign: "center",
               paddingHorizontal: DimensionHelper.wp("10%")
             }}>
             {t("providerDeviceAuth.instructions")}{"\n"}
-            <Text style={{ color: Colors.primary }}>{deviceAuth.verification_uri}</Text>
-            {"\n"}{t("providerDeviceAuth.instructionsLine2")}
+          </Text>
+          <Pressable
+            onPress={() => Linking.openURL(verificationUrl)}
+            testID="provider-device-auth-url-link">
+            <Text
+              style={{
+                color: Colors.primary,
+                fontSize: DimensionHelper.wp("1.4%"),
+                textDecorationLine: "underline",
+                marginBottom: DimensionHelper.hp("0.3%")
+              }}>
+              {deviceAuth.verification_uri}
+            </Text>
+          </Pressable>
+          <Text
+            style={{
+              color: "rgba(255, 255, 255, 0.5)",
+              fontSize: DimensionHelper.wp("1.4%"),
+              letterSpacing: 0.5,
+              marginBottom: DimensionHelper.hp("1%"),
+              textAlign: "center",
+              paddingHorizontal: DimensionHelper.wp("10%")
+            }}>
+            {t("providerDeviceAuth.instructionsLine2")}
           </Text>
 
           <View
             style={{
               backgroundColor: "#ffffff",
-              padding: DimensionHelper.wp("1%"),
+              padding: DimensionHelper.wp("0.8%"),
               borderRadius: 12,
-              marginBottom: DimensionHelper.hp("3%")
+              marginBottom: DimensionHelper.hp("1.5%")
             }}>
             <QRCode
               value={verificationUrl}
-              size={DimensionHelper.wp("12%")}
+              size={DimensionHelper.wp("9%")}
               backgroundColor="#ffffff"
               color="#000000"
             />
@@ -421,7 +463,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
             style={{
               color: "rgba(255, 255, 255, 0.5)",
               fontSize: Typography.labelMedium,
-              marginTop: DimensionHelper.hp("1.5%"),
+              marginTop: DimensionHelper.hp("0.5%"),
               letterSpacing: 0.3
             }}>
             {t("providerDeviceAuth.secondary")}
@@ -432,8 +474,8 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
             underlayColor="rgba(255, 255, 255, 0.1)"
             hasTVPreferredFocus={false}
             style={{
-              marginTop: DimensionHelper.hp("3%"),
-              paddingVertical: DimensionHelper.hp("1.2%"),
+              marginTop: DimensionHelper.hp("1%"),
+              paddingVertical: DimensionHelper.hp("0.8%"),
               paddingHorizontal: DimensionHelper.wp("2.5%"),
               borderRadius: 6,
               borderWidth: 1,
@@ -453,18 +495,16 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
             style={{
               color: "rgba(255, 255, 255, 0.3)",
               fontSize: Typography.labelSmall,
-              marginTop: DimensionHelper.hp("2%")
+              marginTop: DimensionHelper.hp("0.8%")
             }}>
             {t("providerDeviceAuth.expiresIn", { minutes: Math.floor(deviceAuth.expires_in / 60) })}
           </Text>
         </Animated.View>
+        </ScrollView>
 
         <View
           style={{
-            position: "absolute",
-            bottom: DimensionHelper.hp("4%"),
-            left: 0,
-            right: 0,
+            marginTop: DimensionHelper.hp("1%"),
             alignItems: "center"
           }}>
           <TouchableHighlight

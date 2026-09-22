@@ -31,6 +31,12 @@ export const Colors = {
   navBackground: brand.navBackground,
   inputBackground: brand.inputBackground,
 
+  // Sidebar-specific accent (NOT part of brand palette) — used only for
+  // the active nav item's icon color, matching the client's reference design.
+  iconAccent: "#4A90D9",
+  // Solid fill behind the selected sidebar icon (client reference shows a
+  // filled box, not a translucent hover tint).
+  iconAccentBackground: "#173A56",
   // Text colors
   textPrimary: "#FFFFFF",
   textSecondary: "#94a3b8",
