@@ -74,9 +74,10 @@ export const PlayerScreen = (props: Props) => {
     if (showSelectMessage) return;
     handleTapToShowControls();
     switch (pendingKey) {
-      case "right": handleSkipForward(); break;
+      case "right": handleRight(); break;
+      case "next": handleSkipForward(); break;
       case "fastForward": handleRight(); break;
-      case "left": handleSkipBack(); break;
+      case "left": handleLeft(); break;
       case "rewind": handleLeft(); break;
       case "up": handleUp(); break;
       case "previous":
@@ -104,7 +105,7 @@ export const PlayerScreen = (props: Props) => {
   const handleRight = () => {
     const currentFile = CachedData.messageFiles?.[messageIndex];
     if (isVideoFile(currentFile)) {
-      const newTime = Math.min(durationRef.current, currentTimeRef.current + 10);
+      const newTime = durationRef.current > 0 ? Math.min(durationRef.current, currentTimeRef.current + 10) : currentTimeRef.current + 10;
       messageRef.current?.seek(newTime);
     } else {
       stopTimer(); goForward(); startTimer();
@@ -194,14 +195,31 @@ export const PlayerScreen = (props: Props) => {
   React.useEffect(init, []);
   React.useEffect(() => { showSelectMessageRef.current = showSelectMessage; }, [showSelectMessage]);
   React.useEffect(startTimer, [messageIndex]);
+  React.useEffect(() => {
+    durationRef.current = 0;
+    currentTimeRef.current = 0;
+    setDuration(0);
+    setCurrentTime(0);
+  }, [messageIndex]);
   React.useEffect(() => { if (PlayerHelper.pendingPause !== paused) handlePlayPause(); }, [triggerPauseCheck]);
+
+  const handleDuration = (d: number) => {
+    if (d && isFinite(d) && d > 0) {
+      durationRef.current = d;
+      setDuration(d);
+    }
+  };
 
   const handleProgress = (data: { currentTime: number, playableDuration: number }) => {
     const { currentTime: newTime, playableDuration } = data;
     currentTimeRef.current = newTime;
-    durationRef.current = playableDuration;
     setCurrentTime(newTime);
-    setDuration(playableDuration);
+    // playableDuration is how much has BUFFERED so far, not the video's length. Use it only as a
+    // stopgap until onLoad reports the real duration.
+    if (!durationRef.current) {
+      durationRef.current = playableDuration;
+      setDuration(playableDuration);
+    }
   };
 
   const handleControlsSeek = (time: number) => {
@@ -263,6 +281,7 @@ export const PlayerScreen = (props: Props) => {
             paused={paused}
             muted={muted}
             onProgress={handleProgress}
+            onDuration={handleDuration}
             onEnd={handleVideoEnd}
           />
           <TextInput autoFocus style={{ display: "none" }} showSoftInputOnFocus={false} returnKeyType="none" />

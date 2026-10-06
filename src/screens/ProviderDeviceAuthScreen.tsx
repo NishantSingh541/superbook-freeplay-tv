@@ -36,6 +36,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pollGenerationRef = useRef<number>(0);
   const slowDownCountRef = useRef<number>(0);
+  const activeDeviceCodeRef = useRef<string | null>(null);
 
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -71,7 +72,22 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
     }).start();
   };
 
+  // Drop the code currently on screen on the server, so a code someone already typed on the
+  // website can't be approved after this device has moved on to a new one.
+  const cancelActiveCode = () => {
+    const code = activeDeviceCodeRef.current;
+    activeDeviceCodeRef.current = null;
+    const base = providerConfig?.oauthBase;
+    if (!code || !base) return;
+    fetch(`${base}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_code: code })
+    }).catch(() => {});
+  };
+
   const initDeviceFlow = async () => {
+    cancelActiveCode();
     if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);
       pollTimeoutRef.current = null;
@@ -106,6 +122,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
         deviceAuth
       });
 
+      activeDeviceCodeRef.current = deviceAuth.device_code;
       fadeIn();
       startPulseAnimation();
       startPolling(deviceAuth, currentGeneration);
@@ -179,6 +196,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
       }
       await ProviderAuthHelper.setAuth(props.providerId, newAuth);
       await ProviderAuthHelper.setConnectionState(props.providerId, true);
+      activeDeviceCodeRef.current = null;
       setFlowState({ status: "success" });
       SoundHelper.playChime();
 
@@ -212,6 +230,7 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
   };
 
   const handleBack = () => {
+    cancelActiveCode();
     if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);
     }

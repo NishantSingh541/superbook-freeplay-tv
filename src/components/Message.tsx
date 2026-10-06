@@ -16,7 +16,8 @@ type Props = {
   paused: boolean,
   muted?: boolean,
   onProgress?: (data: { currentTime: number; playableDuration: number }) => void,
-  onEnd?: () => void
+  onEnd?: () => void,
+  onDuration?: (duration: number) => void
 };
 
 export type MessageHandle = {
@@ -174,7 +175,7 @@ export const Message = React.forwardRef<MessageHandle, Props>((props, ref) => {
       playInBackground={false}
       playWhenInactive={false}
       onProgress={props.onProgress}
-      onLoad={() => setIsLoading(false)}
+      onLoad={(d: any) => { setIsLoading(false); props.onDuration?.(d?.duration); }}
       onBuffer={({ isBuffering }) => setIsLoading(isBuffering)}
       onEnd={props.file.loopVideo ? undefined : props.onEnd}
       onError={handleVideoError}

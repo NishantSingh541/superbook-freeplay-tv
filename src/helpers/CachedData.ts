@@ -36,6 +36,12 @@ export class CachedData {
   // UC-D-03: defaults true (active) so a fresh install isn't wrongly
   // blocked before the first real membership check has completed.
   static membershipActive: boolean = true;
+  // A grid card currently has focus, and whether it is in the left-most column. The sidebar uses
+  // these so LEFT opens it only when focus is leaving the grid, not when it moves between cards.
+  static cardFocused: boolean = false;
+  static cardAtLeftEdge: boolean = true;
+  // Set when playing a download so Back from the player re-opens that lesson's video list.
+  static reopenDownloadKey: string | null = null;
 
   // Content provider state
   static connectedProviders: string[] = [];

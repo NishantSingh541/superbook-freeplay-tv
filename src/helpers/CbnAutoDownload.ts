@@ -34,6 +34,8 @@ const toMessageFile = (f: ContentFile) => ({
  * Fully automatic, no confirmation — triggered by a periodic timer in
  * App.tsx and once immediately after CBN is first connected.
  */
+import { ThumbnailCache } from "./ThumbnailCache";
+
 const LAST_IDENTITY_KEY = "cbn_last_identity";
 const FAILURE_TRACKING_KEY = "cbn_download_failures";
 const CACHE_MIGRATION_FLAG_KEY = "cache_to_documents_migrated_v1";
@@ -173,8 +175,10 @@ export class CbnAutoDownload {
       // screen can show a "Pending" card for lessons still waiting in the
       // queue behind whichever one is actively downloading.
       CachedData.pendingEntries = {};
+      const alreadyMine = new Set((await DownloadIndex.getAll()).map(e => e.downloadKey));
       for (const entry of ordered) {
         const key = DownloadIndex.generateKey("cbn-schedule", { scheduleId: String(entry.id) });
+        if (alreadyMine.has(key)) continue; // already downloaded: nothing to show as pending
         CachedData.pendingEntries[key] = { title: entry.lesson_title, image: entry.thumb };
       }
 
@@ -211,7 +215,24 @@ export class CbnAutoDownload {
       const messageFiles = files.map(toMessageFile);
       const alreadyCached = await CachedData.allFilesCached(messageFiles);
       if (alreadyCached) {
-        console.log(`[CbnAutoDownload] schedule ${entry.id} already fully cached, skipping`);
+        // The files may be on disk from another account on this device. Make
+        // sure THIS account's own list has the entry so it shows in Downloads.
+        const mine = await DownloadIndex.getAll();
+        if (!mine.some(e => e.downloadKey === downloadKey)) {
+          await DownloadIndex.addEntry({
+            downloadKey,
+            source: "cbn-schedule",
+            providerId: CBN_PROVIDER_ID,
+            title: entry.lesson_title,
+            image: entry.thumb,
+            category: entry.category,
+            messageFiles,
+            downloadedAt: Date.now()
+          });
+          console.log(`[CbnAutoDownload] schedule ${entry.id} files already on disk, added to this account's downloads`);
+        } else {
+          console.log(`[CbnAutoDownload] schedule ${entry.id} already fully cached, skipping`);
+        }
         return;
       }
 
@@ -232,7 +253,7 @@ export class CbnAutoDownload {
       });
       delete CachedData.downloadingEntries[downloadKey];
       console.log(`[CbnAutoDownload] finished downloading schedule ${entry.id}`);
-      DownloadIndex.addEntry({
+      const saved: Parameters<typeof DownloadIndex.addEntry>[0] = {
         downloadKey,
         source: "cbn-schedule",
         providerId: CBN_PROVIDER_ID,
@@ -241,7 +262,10 @@ export class CbnAutoDownload {
         category: entry.category,
         messageFiles,
         downloadedAt: Date.now()
-      });
+      };
+      await DownloadIndex.addEntry(saved);
+      // Keep offline copies of the thumbnails so cards still show them without internet.
+      ThumbnailCache.localizeEntry(saved).then(e => DownloadIndex.addEntry(e)).catch(() => {});
       await this.clearFailure(downloadKey);
     } catch (err) {
       console.error(`[CbnAutoDownload] Failed to download schedule ${entry.id}:`, err);

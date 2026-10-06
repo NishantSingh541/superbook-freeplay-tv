@@ -89,6 +89,17 @@ export const ProviderSettingsScreen = (props: Props) => {
 
   const handleDisconnect = async () => {
     await ProviderAuthHelper.clearAuth(props.providerId);
+    if (props.providerId === "cbn") {
+      // Signed out: point downloads back at the empty default list so the
+      // previous account's downloads aren't shown on the pairing screen, and
+      // don't let a lapsed account's membership state carry over to whoever
+      // pairs next (the next check corrects it within minutes).
+      await CachedData.setAsyncStorage("cbn_last_identity", null);
+      CachedData.pendingEntries = {};
+      CachedData.membershipActive = true;
+      await CachedData.setAsyncStorage("cbn_membership_active", true);
+      await CachedData.setAsyncStorage("cbn_membership_last_check", 0);
+    }
     await ProviderAuthHelper.setConnectionState(props.providerId, false);
     await ProviderSettingsHelper.clearSettings(props.providerId);
     if (CachedData.providerId === props.providerId) {

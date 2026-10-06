@@ -4,7 +4,7 @@ import { ProviderAuthHelper } from "./ProviderAuthHelper";
 const API_BASE = "https://sbamemberdev.wpenginepowered.com/wp-json/superbook/v1";
 const LAST_CHECK_KEY = "cbn_membership_last_check";
 const STATUS_KEY = "cbn_membership_active";
-const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
  * UC-D-03: daily membership/subscription validation. A direct fetch to the

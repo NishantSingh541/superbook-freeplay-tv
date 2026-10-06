@@ -23,6 +23,10 @@ import {
 } from "../interfaces";
 import { Styles, CachedData, ProviderAuthHelper, ProviderSettingsHelper, Colors, Typography, TimeoutHelper } from "../helpers";
 import { MenuHeader, SkeletonCard, EmptyState } from "../components";
+import { findNodeHandle as rnFindNodeHandle } from "react-native";
+import { decodeEntities } from "../helpers/TextHelper";
+
+const cardNodes: Record<string, any> = {};
 import { getProvider } from "../providers";
 const K6_TILE_IMAGE = require("../images/k6-tile.png");
 const PRESCHOOL_TILE_IMAGE = require("../images/preschool-tile.png");
@@ -127,7 +131,7 @@ export const ContentBrowserScreen = (props: Props) => {
       );
       if (version !== requestVersionRef.current) return;
 
-      setItems(data);
+      setItems(data.map(i => ({ ...i, title: decodeEntities(i.title) })) as ContentItem[]);
       setLoading(false);
       // Allow sidebar to expand via focus now that content is loaded
       CachedData.preventSidebarExpand = false;
@@ -250,6 +254,8 @@ export const ContentBrowserScreen = (props: Props) => {
     return (
       <TouchableHighlight
         testID={`cb-folder-${folder.id}${isFocused ? "-focused" : ""}`}
+        ref={(el: any) => { cardNodes[folder.id] = el; }}
+        {...({ nextFocusRight: (index % 3 === 2 || index === items.length - 1) && cardNodes[folder.id] ? rnFindNodeHandle(cardNodes[folder.id]) : undefined } as any)}
         style={styles.item}
         underlayColor="transparent"
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFolder(folder, folderStack.length === 2 ? index : undefined); }}
@@ -257,17 +263,20 @@ export const ContentBrowserScreen = (props: Props) => {
           initialFocusSet.current = true;
           focusedIndexRef.current = index;
           CachedData.lastFocusedIndex[screenKey] = index;
+          CachedData.cardFocused = true;
+          CachedData.cardAtLeftEdge = index % 3 === 0;
           setFocusedItemId(folder.id);
           Animated.spring(scaleAnim, { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
         onBlur={() => {
+          CachedData.cardFocused = false;
           setFocusedItemId(prev => prev === folder.id ? null : prev);
           Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
         hasTVPreferredFocus={shouldFocus}>
         <Animated.View style={{
           width: "100%",
-          borderRadius: 14,
+          borderRadius: 20,
           overflow: "hidden",
           transform: [{ scale: scaleAnim }],
           borderWidth: 4,
@@ -285,7 +294,7 @@ export const ContentBrowserScreen = (props: Props) => {
               style={{
                 height: DimensionHelper.hp("25%"),
                 width: "100%",
-                borderRadius: 12
+                borderRadius: 20
               }}
               resizeMode="contain"
               source={localOverrideImage}
@@ -295,7 +304,7 @@ export const ContentBrowserScreen = (props: Props) => {
               <View style={{
                 height: DimensionHelper.hp("25%"),
                 width: "100%",
-                borderRadius: 12,
+                borderRadius: 20,
                 justifyContent: "center",
                 alignItems: "center",
                 backgroundColor: Colors.surface
@@ -306,7 +315,7 @@ export const ContentBrowserScreen = (props: Props) => {
               <View style={{
                 height: DimensionHelper.hp("25%"),
                 width: "100%",
-                borderRadius: 12,
+                borderRadius: 20,
                 justifyContent: "center",
                 alignItems: "center",
                 backgroundColor: Colors.surface
@@ -325,7 +334,7 @@ export const ContentBrowserScreen = (props: Props) => {
                 style={{
                   height: DimensionHelper.hp("25%"),
                   width: "100%",
-                  borderRadius: 12
+                  borderRadius: 20
                 }}
                 resizeMode="cover"
                 source={{ uri: folderImage }}
@@ -336,7 +345,7 @@ export const ContentBrowserScreen = (props: Props) => {
               style={{
                 height: DimensionHelper.hp("25%"),
                 width: "100%",
-                borderRadius: 12,
+                borderRadius: 20,
                 justifyContent: "center",
                 alignItems: "center",
                 backgroundColor: Colors.surface,
@@ -403,11 +412,13 @@ export const ContentBrowserScreen = (props: Props) => {
     return (
       <TouchableHighlight
         testID={`cb-file-${file.id}${isFocused ? "-focused" : ""}`}
+        ref={(el: any) => { cardNodes[file.id] = el; }}
+        {...({ nextFocusRight: (index % 3 === 2 || index === items.length - 1) && cardNodes[file.id] ? rnFindNodeHandle(cardNodes[file.id]) : undefined } as any)}
         style={{
           ...styles.item,
           ...(isFocused ? {
             backgroundColor: Colors.primary,
-            borderRadius: 16,
+            borderRadius: 20,
             transform: [{ scale: 1.05 }],
             shadowColor: Colors.primary,
             shadowOffset: { width: 0, height: 0 },
@@ -418,8 +429,8 @@ export const ContentBrowserScreen = (props: Props) => {
         }}
         underlayColor={Colors.pressedBackground}
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFile(file); }}
-        onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; setFocusedItemId(file.id); }}
-        onBlur={() => { setFocusedItemId(prev => prev === file.id ? null : prev); }}
+        onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedItemId(file.id); }}
+        onBlur={() => { CachedData.cardFocused = false; setFocusedItemId(prev => prev === file.id ? null : prev); }}
         hasTVPreferredFocus={shouldFocus}>
         <View style={{ width: "100%" }}>
           <View style={{ position: "relative" }}>
@@ -428,7 +439,7 @@ export const ContentBrowserScreen = (props: Props) => {
                 style={{
                   height: DimensionHelper.hp("25%"),
                   width: "100%",
-                  borderRadius: 12
+                  borderRadius: 20
                 }}
                 resizeMode="contain"
                 source={{ uri: file.thumbnail }}
@@ -438,7 +449,7 @@ export const ContentBrowserScreen = (props: Props) => {
                 style={{
                   height: DimensionHelper.hp("25%"),
                   width: "100%",
-                  borderRadius: 12,
+                  borderRadius: 20,
                   backgroundColor: Colors.backgroundCard,
                   justifyContent: "center",
                   alignItems: "center"

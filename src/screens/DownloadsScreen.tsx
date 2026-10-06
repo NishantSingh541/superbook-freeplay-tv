@@ -6,6 +6,9 @@ import { DimensionHelper } from "../helpers/DimensionHelper";
 import { DownloadedItemInterface } from "../interfaces";
 import { CachedData, Styles, Colors, Typography, DownloadIndex, StorageManager, CbnAutoDownload } from "../helpers";
 import { PlayerHelper } from "../helpers/PlayerHelper";
+import { ThumbnailCache } from "../helpers/ThumbnailCache";
+import { findNodeHandle as rnFindNodeHandle } from "react-native";
+import { decodeEntities } from "../helpers/TextHelper";
 import { MenuHeader, EmptyState, SkeletonCard } from "../components";
 
 type Props = {
@@ -13,6 +16,8 @@ type Props = {
   sidebarState: (state: boolean) => void;
   sidebarExpanded?: boolean;
 };
+
+const cardNodes: Record<string, any> = {};
 
 type DownloadingItem = { downloadKey: string; title: string; image?: string; progress: number; filesCached?: number; filesTotal?: number };
 type PendingItem = { downloadKey: string; title: string; image?: string };
@@ -27,6 +32,9 @@ export const DownloadsScreen = (props: Props) => {
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   // The lesson currently drilled into, showing its individual videos.
   const [pickerEntry, setPickerEntry] = useState<DownloadedItemInterface | null>(null);
+  // Back is registered once at mount, so it must read the CURRENT lesson through a ref.
+  const pickerEntryRef = useRef<DownloadedItemInterface | null>(null);
+  pickerEntryRef.current = pickerEntry;
 
   const prevDownloadingKeysRef = useRef<Set<string>>(new Set());
 
@@ -52,6 +60,16 @@ export const DownloadsScreen = (props: Props) => {
     DownloadIndex.getVerifiedEntries(true).then(entries => {
       setDownloads(entries);
       setLoading(false);
+      const reopenKey = CachedData.reopenDownloadKey;
+      if (reopenKey) {
+        CachedData.reopenDownloadKey = null;
+        const target = entries.find(e => e.downloadKey === reopenKey);
+        if (target) setPickerEntry(target);
+      }
+      // Older entries only have remote image URLs; save offline copies while online.
+      ThumbnailCache.backfill(entries).then(changed => {
+        if (changed) DownloadIndex.getVerifiedEntries().then(setDownloads).catch(() => {});
+      }).catch(() => {});
     }).catch(() => {
       setLoading(false);
     });
@@ -97,6 +115,7 @@ export const DownloadsScreen = (props: Props) => {
     CachedData.setAsyncStorage("messageFiles", entry.messageFiles);
     StorageManager.touchEntry(entry.downloadKey);
     PlayerHelper.pendingPause = false;
+    CachedData.reopenDownloadKey = entry.downloadKey;
     props.navigateTo("player", { downloadedLesson: true, providerStartIndex: startIndex });
   };
 
@@ -129,22 +148,26 @@ export const DownloadsScreen = (props: Props) => {
     const isFocused = focusedKey === entry.downloadKey;
     const isDeleteFocused = focusedKey === `${entry.downloadKey}-delete`;
     const videoCount = entry.messageFiles?.length ?? 0;
+    const totalCards = downloading.length + pending.filter(p => !downloads.some(d => d.downloadKey === p.downloadKey)).length + downloads.length;
+    const rowEnd = index % 3 === 2 || index === totalCards - 1;
 
     return (
       <View style={{ ...styles.item }}>
         <View style={{
           width: "100%",
-          borderRadius: 14,
+          borderRadius: 20,
           overflow: "hidden",
           borderWidth: 4,
           borderColor: isFocused ? Colors.primary : "transparent"
         }}>
           <TouchableHighlight
             testID={`download-lesson-${entry.downloadKey}${isFocused ? "-focused" : ""}`}
+            ref={(el: any) => { cardNodes[entry.downloadKey] = el; }}
+            {...({ nextFocusRight: rowEnd && cardNodes[entry.downloadKey] ? rnFindNodeHandle(cardNodes[entry.downloadKey]) : undefined } as any)}
             underlayColor={Colors.pressedBackground}
             onPress={() => setPickerEntry(entry)}
-            onFocus={() => setFocusedKey(entry.downloadKey)}
-            onBlur={() => setFocusedKey(prev => (prev === entry.downloadKey ? null : prev))}
+            onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedKey(entry.downloadKey); }}
+            onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === entry.downloadKey ? null : prev)); }}
             hasTVPreferredFocus={!props.sidebarExpanded && index === 0}
           >
             <View>
@@ -160,8 +183,8 @@ export const DownloadsScreen = (props: Props) => {
                 </View>
               )}
               <View style={{ padding: 8, backgroundColor: Colors.backgroundCard }}>
-                <Text style={{ ...Styles.smallWhiteText }} numberOfLines={2}>{entry.title}</Text>
-                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2 }}>
+                <Text style={{ ...Styles.smallWhiteText, textAlign: "center" }} numberOfLines={2}>{decodeEntities(entry.title)}</Text>
+                <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2, textAlign: "center" }}>
                   {t("downloads.episodeCount", "{{count}} episodes", { count: videoCount })}
                   {entry.downloadedAt ? ` • ${formatDownloadedDate(entry.downloadedAt)}` : ""}
                 </Text>
@@ -171,10 +194,12 @@ export const DownloadsScreen = (props: Props) => {
 
           <TouchableHighlight
             testID={`download-lesson-delete-${entry.downloadKey}${isDeleteFocused ? "-focused" : ""}`}
+            ref={(el: any) => { cardNodes[`${entry.downloadKey}-delete`] = el; }}
+            {...({ nextFocusRight: rowEnd && cardNodes[`${entry.downloadKey}-delete`] ? rnFindNodeHandle(cardNodes[`${entry.downloadKey}-delete`]) : undefined } as any)}
             underlayColor="rgba(255,0,0,0.5)"
             onPress={() => confirmDelete(entry)}
-            onFocus={() => setFocusedKey(`${entry.downloadKey}-delete`)}
-            onBlur={() => setFocusedKey(prev => (prev === `${entry.downloadKey}-delete` ? null : prev))}
+            onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedKey(`${entry.downloadKey}-delete`); }}
+            onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === `${entry.downloadKey}-delete` ? null : prev)); }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -206,15 +231,18 @@ export const DownloadsScreen = (props: Props) => {
       <View style={{ ...styles.item }}>
         <TouchableHighlight
           testID={`download-video-${cardKey}${isFocused ? "-focused" : ""}`}
+          style={{ width: "100%" }}
+          ref={(el: any) => { cardNodes[cardKey] = el; }}
+          {...({ nextFocusRight: (fileIndex % 3 === 2 || fileIndex === entry.messageFiles.length - 1) && cardNodes[cardKey] ? rnFindNodeHandle(cardNodes[cardKey]) : undefined } as any)}
           underlayColor={Colors.pressedBackground}
           onPress={() => playEntry(entry, fileIndex)}
-          onFocus={() => setFocusedKey(cardKey)}
-          onBlur={() => setFocusedKey(prev => (prev === cardKey ? null : prev))}
+          onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = fileIndex % 3 === 0; setFocusedKey(cardKey); }}
+          onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === cardKey ? null : prev)); }}
           hasTVPreferredFocus={index === 0}
         >
           <View style={{
             width: "100%",
-            borderRadius: 12,
+            borderRadius: 20,
             overflow: "hidden",
             borderWidth: 4,
             borderColor: isFocused ? Colors.primary : "transparent"
@@ -240,8 +268,8 @@ export const DownloadsScreen = (props: Props) => {
               )}
             </View>
             <View style={{ padding: 8, backgroundColor: Colors.backgroundCard }}>
-              <Text style={{ ...Styles.smallWhiteText }} numberOfLines={2}>{file.name}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2 }}>
+              <Text style={{ ...Styles.smallWhiteText, textAlign: "center" }} numberOfLines={2}>{decodeEntities(file.name)}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2, textAlign: "center" }}>
                 {t("contentBrowser.fileType.video", "Video")}
               </Text>
             </View>
@@ -253,7 +281,7 @@ export const DownloadsScreen = (props: Props) => {
 
   const getDownloadingCard = (item: DownloadingItem) => (
     <View key={item.downloadKey} style={{ ...styles.item }}>
-      <View style={{ width: "100%", borderRadius: 14, overflow: "hidden" }}>
+      <View style={{ width: "100%", borderRadius: 20, overflow: "hidden" }}>
         <View>
           {item.image ? (
             <Image
@@ -268,7 +296,7 @@ export const DownloadsScreen = (props: Props) => {
             </View>
           )}
           <View style={{ padding: 8, backgroundColor: Colors.backgroundCard }}>
-            <Text style={{ ...Styles.smallWhiteText }} numberOfLines={1}>{item.title}</Text>
+            <Text style={{ ...Styles.smallWhiteText }} numberOfLines={1}>{decodeEntities(item.title)}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
               <Text style={{ ...Styles.smallerWhiteText, color: Colors.primary }}>
                 {t("downloads.downloading", "Downloading...")} {item.progress}%
@@ -286,7 +314,7 @@ export const DownloadsScreen = (props: Props) => {
 
   const getPendingCard = (item: PendingItem) => (
     <View key={item.downloadKey} style={{ ...styles.item }}>
-      <View style={{ width: "100%", borderRadius: 14, overflow: "hidden", opacity: 0.6 }}>
+      <View style={{ width: "100%", borderRadius: 20, overflow: "hidden", opacity: 0.6 }}>
         <View>
           {item.image ? (
             <Image
@@ -301,7 +329,7 @@ export const DownloadsScreen = (props: Props) => {
             </View>
           )}
           <View style={{ padding: 8, backgroundColor: Colors.backgroundCard }}>
-            <Text style={{ ...Styles.smallWhiteText }} numberOfLines={1}>{item.title}</Text>
+            <Text style={{ ...Styles.smallWhiteText }} numberOfLines={1}>{decodeEntities(item.title)}</Text>
             <Text style={{ ...Styles.smallerWhiteText, color: Colors.textSubtle, marginTop: 4 }}>
               {t("downloads.pending", "Pending")}
             </Text>
@@ -348,7 +376,7 @@ export const DownloadsScreen = (props: Props) => {
       | { kind: "lesson"; item: DownloadedItemInterface };
     const combined: CombinedItem[] = [
       ...downloading.map(item => ({ kind: "downloading" as const, item })),
-      ...pending.map(item => ({ kind: "pending" as const, item })),
+      ...pending.filter(p => !downloads.some(d => d.downloadKey === p.downloadKey)).map(item => ({ kind: "pending" as const, item })),
       ...downloads.map(item => ({ kind: "lesson" as const, item }))
     ];
 
@@ -371,7 +399,7 @@ export const DownloadsScreen = (props: Props) => {
   };
 
   const handleBack = () => {
-    if (pickerEntry) {
+    if (pickerEntryRef.current) {
       setPickerEntry(null);
       return;
     }
@@ -389,7 +417,7 @@ export const DownloadsScreen = (props: Props) => {
 
   return (
     <View style={{ ...Styles.menuScreen }} testID="downloads-root">
-      <MenuHeader headerText={pickerEntry ? pickerEntry.title || t("downloads.header") : t("downloads.header")} />
+      <MenuHeader headerText={pickerEntry ? decodeEntities(pickerEntry.title) || t("downloads.header") : t("downloads.header")} />
       {pickerEntry && (
         <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: DimensionHelper.wp("2.5%"), paddingVertical: DimensionHelper.hp("1%"), backgroundColor: Colors.surfaceDark }}>
           <Text style={{ color: Colors.textSubtle, fontSize: Typography?.labelLarge ?? 14 }}>
@@ -397,7 +425,7 @@ export const DownloadsScreen = (props: Props) => {
             {" › "}
             {(pickerEntry.category === 455 ? t("cbnToday.preschoolCategory", "Preschool") : pickerEntry.category === 454 ? t("cbnToday.primaryCategory", "Primary School") : "")}
             {pickerEntry.category ? " › " : ""}
-            {pickerEntry.title}
+            {decodeEntities(pickerEntry.title)}
           </Text>
           <View style={{ flex: 1 }} />
           {pickerEntry.downloadedAt && (

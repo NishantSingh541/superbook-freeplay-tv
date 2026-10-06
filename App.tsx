@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Navigator } from "./src/navigation/Navigator";
 
 import { EnvironmentHelper } from "./src/helpers/EnvironmentHelper";
-import { LogBox } from "react-native";
+import { LogBox, AppState } from "react-native";
 import { ErrorHelper } from "./src/helpers/ErrorHelper";
 import { PlanSync } from "./src/helpers/PlanSync";
 import { CbnAutoDownload } from "./src/helpers/CbnAutoDownload";
@@ -29,7 +29,7 @@ const CBN_AUTO_DOWNLOAD_JITTER_MS = 90 * 1000;
 // due (MembershipHelper.checkIfDue only makes a real network call once the
 // last check is 24+ hours old — this interval just controls how often we
 // glance at the clock, not how often we hit the backend).
-const MEMBERSHIP_CHECK_POLL_MS = 60 * 60 * 1000; // hourly
+const MEMBERSHIP_CHECK_POLL_MS = 5 * 60 * 1000; // every 5 minutes
 
 Sentry.init({
   dsn: "https://ac7ef4e2f5095b74c8e5bc623750fefe@o4510432524107776.ingest.us.sentry.io/4510848267190272",
@@ -74,9 +74,11 @@ const App = () => {
     // moment the app opens rather than defaulting to "active" until the
     // first network check completes. Then check hourly whether a fresh
     // check is actually due.
-    MembershipHelper.loadCachedStatus();
+    MembershipHelper.loadCachedStatus().then(() => MembershipHelper.checkStatus("cbn"));
     const membershipInterval = setInterval(() => { MembershipHelper.checkIfDue("cbn"); }, MEMBERSHIP_CHECK_POLL_MS);
-    MembershipHelper.checkIfDue("cbn");
+    const appStateSub = AppState.addEventListener("change", state => {
+      if (state === "active") MembershipHelper.checkStatus("cbn");
+    });
 
     // Self-rescheduling setTimeout instead of a fixed setInterval, so a
     // fresh random jitter is computed every cycle rather than the offset
@@ -97,6 +99,7 @@ const App = () => {
     return () => {
       clearInterval(planSyncInterval);
       clearInterval(membershipInterval);
+      appStateSub.remove();
       if (cbnAutoDownloadTimeout) clearTimeout(cbnAutoDownloadTimeout);
     };
   }, []);

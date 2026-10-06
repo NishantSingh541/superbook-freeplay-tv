@@ -4,10 +4,15 @@ import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { DimensionHelper } from "../helpers/DimensionHelper";
 import { CachedData, Styles, Colors, DownloadIndex, StorageManager } from "../helpers";
+import { ThumbnailCache } from "../helpers/ThumbnailCache";
+import { decodeEntities } from "../helpers/TextHelper";
 import LinearGradient from "react-native-linear-gradient";
 import { ContentFolder } from "../interfaces";
 import { getProvider } from "../providers";
 import { SvgUri } from "react-native-svg";
+
+const CATEGORY_PRESCHOOL = 455;
+const CATEGORY_PRIMARY = 454;
 
 type Props = {
   navigateTo(page: string, data?: any): void;
@@ -15,6 +20,10 @@ type Props = {
   coverImage?: string;
   title?: string;
   description?: string;
+  /** Lesson-level image to file the download under (falls back to the last folder in folderStack). */
+  lessonImage?: string;
+  /** School type (454 = K-6, 455 = Preschool); derived from folderStack when omitted. */
+  category?: number | null;
   startIndex: number;
   folderStack?: ContentFolder[];
   /**
@@ -27,6 +36,20 @@ type Props = {
   backToData?: any;
 };
 
+// A video only counts as "downloaded" if its files are on disk AND this
+// account's own download list includes them. The files folder is shared by
+// every account on the device, so disk alone would let one account play
+// another account's downloads.
+const isDownloadedForThisAccount = async (files: any[]): Promise<boolean> => {
+  if (!(await CachedData.allFilesCached(files))) return false;
+  const mine = await DownloadIndex.getAll();
+  const owned = new Set<string>();
+  mine.forEach(e => e.messageFiles.forEach(f => {
+    if (f.url) owned.add(decodeURIComponent(CachedData.getFilePath(f.url)));
+  }));
+  return files.every(f => !f.url || owned.has(decodeURIComponent(CachedData.getFilePath(f.url))));
+};
+
 export const ProviderDownloadScreen = (props: Props) => {
   const { t } = useTranslation();
   const [totalItems, setTotalItems] = React.useState(CachedData.totalCachableItems);
@@ -36,20 +59,57 @@ export const ProviderDownloadScreen = (props: Props) => {
   const [mode, setMode] = React.useState<"checking" | "choosing" | "downloading" | "ready">("checking");
   const [focusedBtn, setFocusedBtn] = React.useState<"download" | "stream">("download");
   const buttonFadeAnim = useRef(new Animated.Value(0)).current;
+  const progressRef = useRef({ cached: 0, total: 0, file: 0 });
+  const downloadActiveRef = useRef(false);
 
   const updateCounts = (cached: number, total: number): void => {
     setCachedItems(cached);
     setTotalItems(total);
+    progressRef.current = { ...progressRef.current, cached, total };
+    publishProgress();
   };
 
   const updateFileProgress = (progress: number): void => {
     setCurrentFileProgress(progress);
+    progressRef.current = { ...progressRef.current, file: progress };
+    publishProgress();
   };
 
   const downloadKey = React.useMemo(
     () => DownloadIndex.generateKey("provider", { providerId: props.providerId, title: props.title || "" }),
     [props.providerId, props.title]
   );
+
+  const lessonImage = React.useMemo(() => {
+    if (props.lessonImage) return props.lessonImage;
+    const stack = props.folderStack || [];
+    return (stack.length > 0 ? stack[stack.length - 1].thumbnail : undefined) || props.coverImage;
+  }, [props.lessonImage, props.folderStack, props.coverImage]);
+
+  const downloadCategory = (): number | null | undefined => {
+    if (props.category !== undefined) return props.category;
+    const root = (props.folderStack?.[0]?.title || "").toLowerCase();
+    if (root.includes("preschool") || root.includes("pre-school")) return CATEGORY_PRESCHOOL;
+    if (root.includes("k-6") || root.includes("k6") || root.includes("primary")) return CATEGORY_PRIMARY;
+    return undefined;
+  };
+
+  // Publishes this download's progress to the registry the Downloads screen
+  // (and a reopened copy of this screen) reads. Runs from callbacks that keep
+  // firing even after this screen is left, so it only touches refs and the
+  // static registry, never component state.
+  const publishProgress = (): void => {
+    if (!downloadActiveRef.current) return;
+    const { cached, total, file } = progressRef.current;
+    const percent = total > 0 ? Math.min(100, Math.round(((cached + file) / total) * 100)) : 0;
+    CachedData.downloadingEntries[downloadKey] = {
+      title: props.title || "",
+      image: lessonImage,
+      progress: percent,
+      filesCached: cached,
+      filesTotal: total
+    };
+  };
 
   const handleStart = () => {
     StorageManager.touchEntry(downloadKey);
@@ -75,6 +135,7 @@ export const ProviderDownloadScreen = (props: Props) => {
 
   const handleDownload = () => {
     setMode("downloading");
+    if (CachedData.downloadingEntries[downloadKey]) return; // already running: just follow it
     startDownload();
   };
 
@@ -90,7 +151,7 @@ export const ProviderDownloadScreen = (props: Props) => {
       const focusedStyle = { backgroundColor: Colors.primaryDark, borderColor: Colors.primary };
       const unfocusedStyle = { backgroundColor: Colors.surface, borderColor: Colors.borderSubtle };
       return (<>
-        <Text style={Styles.H2}>{props.title || t("providerDownload.fallbackTitle")}</Text>
+        <Text style={Styles.H2}>{decodeEntities(props.title) || t("providerDownload.fallbackTitle")}</Text>
         {props.description && (
           <Text style={{ ...Styles.smallerWhiteText, color: Colors.textLight }}>{props.description}</Text>
         )}
@@ -119,7 +180,7 @@ export const ProviderDownloadScreen = (props: Props) => {
 
     if (mode === "ready") {
       return (<>
-        <Text style={Styles.H2}>{props.title || t("providerDownload.fallbackTitle")}</Text>
+        <Text style={Styles.H2}>{decodeEntities(props.title) || t("providerDownload.fallbackTitle")}</Text>
         {props.description && (
           <Text style={{ ...Styles.smallerWhiteText, color: Colors.textLight }}>{props.description}</Text>
         )}
@@ -142,7 +203,7 @@ export const ProviderDownloadScreen = (props: Props) => {
     const buttonHeight = DimensionHelper.hp("6%");
     return (
       <>
-        <Text style={Styles.H2}>{props.title || t("providerDownload.fallbackTitle")}</Text>
+        <Text style={Styles.H2}>{decodeEntities(props.title) || t("providerDownload.fallbackTitle")}</Text>
         {props.description && (
           <Text style={{ ...Styles.smallerWhiteText, color: Colors.textLight }}>{props.description}</Text>
         )}
@@ -165,27 +226,49 @@ export const ProviderDownloadScreen = (props: Props) => {
         setMode("choosing");
         return;
       }
+      downloadActiveRef.current = true;
       setReady(false);
       const hasSpace = await StorageManager.ensureFreeSpace([downloadKey]);
       if (!hasSpace) {
+        downloadActiveRef.current = false;
         setLowStorage(true);
         setMode("choosing");
         return;
       }
       setLowStorage(false);
-      CachedData.prefetch(files, updateCounts, updateFileProgress).then(() => {
-        setReady(true);
-        DownloadIndex.addEntry({
-          downloadKey,
-          source: "provider",
-          providerId: props.providerId,
-          title: props.title,
-          description: props.description,
-          image: props.coverImage,
-          messageFiles: files,
-          downloadedAt: Date.now()
+      progressRef.current = { cached: 0, total: files.length, file: 0 };
+      publishProgress();
+      const finish = (): void => {
+        downloadActiveRef.current = false;
+        delete CachedData.downloadingEntries[downloadKey];
+      };
+      CachedData.prefetch(files, updateCounts, updateFileProgress)
+        .then(async () => {
+          await DownloadIndex.addEntry({
+            downloadKey,
+            source: "provider",
+            providerId: props.providerId,
+            title: props.title,
+            description: props.description,
+            image: lessonImage,
+            category: downloadCategory(),
+            messageFiles: files,
+            downloadedAt: Date.now()
+          });
+          finish();
+          setReady(true);
+          // Keep offline copies of the thumbnails (in the background) so the
+          // Downloads cards still show images with no internet.
+          DownloadIndex.getAll().then(all => {
+            const saved = all.find(e => e.downloadKey === downloadKey);
+            if (saved) ThumbnailCache.localizeEntry(saved).then(e => DownloadIndex.addEntry(e)).catch(() => {});
+          }).catch(() => {});
+        })
+        .catch(err => {
+          console.warn("[ProviderDownload] download failed:", err);
+          finish();
+          setMode("choosing");
         });
-      });
     } else {
       setReady(true);
     }
@@ -213,8 +296,12 @@ export const ProviderDownloadScreen = (props: Props) => {
     // If the video is already fully downloaded, skip straight to
     // playback — no Download/Stream/Start button should ever show.
     const files = CachedData.messageFiles;
+    if (CachedData.downloadingEntries[downloadKey]) {
+      setMode("downloading");
+      return () => { backHandler.remove(); };
+    }
     if (files && files.length > 0) {
-      CachedData.allFilesCached(files).then(allCached => {
+      isDownloadedForThisAccount(files).then(allCached => {
         if (allCached) {
           setCachedItems(files.length);
           setTotalItems(files.length);
@@ -252,6 +339,41 @@ export const ProviderDownloadScreen = (props: Props) => {
         useNativeDriver: true
       }).start();
     }
+  }, [mode]);
+
+  // While a download for this video/lesson runs (started here, or earlier and
+  // this screen was left and reopened), mirror its progress and notice when
+  // it finishes or fails.
+  useEffect(() => {
+    if (mode !== "downloading") return undefined;
+    let cancelled = false;
+    const tick = async () => {
+      const entry = CachedData.downloadingEntries[downloadKey];
+      if (entry) {
+        const total = entry.filesTotal ?? 0;
+        const cached = entry.filesCached ?? 0;
+        setTotalItems(total);
+        setCachedItems(cached);
+        setCurrentFileProgress(total > 0 ? Math.max(0, Math.min(1, (entry.progress / 100) * total - cached)) : 0);
+        return;
+      }
+      if (downloadActiveRef.current) return; // this screen's own download is still starting up
+      const files = CachedData.messageFiles || [];
+      if (files.length > 0 && (await CachedData.allFilesCached(files))) {
+        if (!cancelled) {
+          setCachedItems(files.length);
+          setTotalItems(files.length);
+          setReady(true);
+        }
+      } else if (!cancelled) {
+        setMode("choosing");
+      }
+    };
+    const id = setInterval(tick, 500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [mode]);
 
   // Use cover image, fall back to parent folder image, then provider logo

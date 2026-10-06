@@ -32,8 +32,12 @@ const CATEGORY_PRIMARY = 454;   // WordPress taxonomy term ID: "K-6" (displayed 
 
 // Shared card sizing — matches ContentBrowserScreen's folder/file cards so
 // every grid in the app has a consistent, polished look.
+import { findNodeHandle as rnFindNodeHandle } from "react-native";
+import { decodeEntities } from "../helpers/TextHelper";
+
+const cardNodes: Record<string, any> = {};
 const CARD_IMAGE_HEIGHT = DimensionHelper.hp("25%");
-const CARD_BORDER_RADIUS = 12;
+const CARD_BORDER_RADIUS = 20;
 
 const toMessageFile = (f: ContentFile) => ({
   id: f.id,
@@ -66,6 +70,8 @@ export const CbnTodayScreen = (props: Props) => {
     props.navigateTo("providerDownload", {
       providerId: props.providerId,
       coverImage: lesson.files[startIndex]?.thumbnail || lesson.lessonThumb || lesson.courseThumb,
+      lessonImage: lesson.lessonThumb || lesson.courseThumb || lesson.files[0]?.thumbnail,
+      category: lesson.category ?? undefined,
       title: lesson.lessonTitle,
       startIndex,
       folderStack: [],
@@ -164,7 +170,7 @@ export const CbnTodayScreen = (props: Props) => {
         }
         return;
       }
-      props.navigateTo("contentBrowser", { providerId: props.providerId, folderStack: [] });
+      setLoading(false);
     } catch (ex) {
       console.error("[CbnToday] Failed to load today's lessons, retrying silently:", ex);
       // No error screen — a stalled connection after the device has been
@@ -365,10 +371,12 @@ export const CbnTodayScreen = (props: Props) => {
                 >
                   <TouchableHighlight
                     testID={`cbn-today-video-${index}${isFocused ? "-focused" : ""}`}
+                    ref={(el: any) => { cardNodes[file.id] = el; }}
+                    {...({ nextFocusRight: (colIndex === 2 || index === pickerLesson.files.length - 1) && cardNodes[file.id] ? rnFindNodeHandle(cardNodes[file.id]) : undefined } as any)}
                     underlayColor={Colors.pressedBackground}
                     onPress={() => playLesson(pickerLesson, index)}
-                    onFocus={() => setFocusedId(file.id)}
-                    onBlur={() => setFocusedId(prev => (prev === file.id ? null : prev))}
+                    onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = colIndex === 0; setFocusedId(file.id); }}
+                    onBlur={() => { CachedData.cardFocused = false; setFocusedId(prev => (prev === file.id ? null : prev)); }}
                     hasTVPreferredFocus={index === 0}
                   >
                     <View style={{
@@ -409,7 +417,7 @@ export const CbnTodayScreen = (props: Props) => {
                         style={{ color: "#fff", fontSize: Typography.labelMedium, marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
                         numberOfLines={2}
                         ellipsizeMode="tail">
-                        {file.title}
+                        {decodeEntities(file.title)}
                       </Text>
                       <Text
                         style={{ color: "rgba(255,255,255,0.5)", fontSize: Typography.labelSmall, textAlign: "center" }}>
@@ -455,8 +463,8 @@ export const CbnTodayScreen = (props: Props) => {
         }}
         underlayColor="transparent"
         onPress={onPress}
-        onFocus={() => setFocusedId(id)}
-        onBlur={() => setFocusedId(prev => (prev === id ? null : prev))}
+        onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = id === "primary"; setFocusedId(id); }}
+        onBlur={() => { CachedData.cardFocused = false; setFocusedId(prev => (prev === id ? null : prev)); }}
         hasTVPreferredFocus={autoFocus}
       >
         <View style={{ width: "100%" }}>

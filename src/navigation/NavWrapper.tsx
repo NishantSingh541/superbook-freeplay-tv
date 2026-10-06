@@ -34,6 +34,7 @@ export const NavWrapper = (props: Props) => {
   const providerRefs = useRef<{[key: string]: any}>({});
   const recentlyCollapsed = useRef(false);
   const sidebarMounted = useRef(false);
+  const lastScreenRef = useRef(CachedData.currentScreen);
 
   const fullScreenModeScreens = ["planDownload"];
   const isFullScreenMode = fullScreenModeScreens.includes(CachedData.currentScreen);
@@ -53,6 +54,11 @@ export const NavWrapper = (props: Props) => {
   });
 
   useEffect(() => {
+    if (lastScreenRef.current !== CachedData.currentScreen) {
+      lastScreenRef.current = CachedData.currentScreen;
+      CachedData.cardFocused = false;
+      CachedData.cardAtLeftEdge = true;
+    }
     if (props.sidebarExpanded && CachedData.currentScreen) highlightTab(CachedData.currentScreen);
 
     // Track when sidebar is collapsed to prevent immediate re-expansion from focus events
@@ -102,7 +108,7 @@ export const NavWrapper = (props: Props) => {
       props.sidebarState(false);
     }
     // Explicitly handle LEFT navigation to open sidebar
-    if (isLeft && !props.sidebarExpanded) {
+    if (isLeft && !props.sidebarExpanded && !(CachedData.cardFocused && !CachedData.cardAtLeftEdge)) {
       props.sidebarState(true);
     }
   };
@@ -123,6 +129,10 @@ export const NavWrapper = (props: Props) => {
         highlightedItem = "cbnToday";
         break;
       case "providers":
+      case "providerSettings":
+      case "providerDeviceAuth":
+      case "providerOAuth":
+      case "providerFormLogin":
         highlightedItem = "providers";
         break;
       case "contentBrowser":
