@@ -6,7 +6,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { CachedData, ProviderAuthHelper, Styles, Colors, Typography, CbnAutoDownload, TimeoutHelper } from "../helpers";
 import { DimensionHelper } from "../helpers/DimensionHelper";
 import { getProvider } from "../providers";
-import { MenuHeader } from "../components";
+import { MenuHeader, EmptyState } from "../components";
 import type { ContentFile, TodayLesson } from "@churchapps/content-providers";
 
 const K6_ROBOT_IMAGE = require("../images/k6-robot.png");
@@ -34,6 +34,7 @@ const CATEGORY_PRIMARY = 454;   // WordPress taxonomy term ID: "K-6" (displayed 
 // every grid in the app has a consistent, polished look.
 import { findNodeHandle as rnFindNodeHandle } from "react-native";
 import { decodeEntities } from "../helpers/TextHelper";
+import { MembershipHelper } from "../helpers/MembershipHelper";
 
 const cardNodes: Record<string, any> = {};
 const CARD_IMAGE_HEIGHT = DimensionHelper.hp("25%");
@@ -57,6 +58,7 @@ export const CbnTodayScreen = (props: Props) => {
   const [primary, setPrimary] = useState<TodayLesson | null>(null);
   const [error, setError] = useState(false);
   const [pickerLesson, setPickerLesson] = useState<TodayLesson | null>(null);
+  const [lapsed, setLapsed] = useState(!CachedData.membershipActive);
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
   const focusStyle = (id: string) =>
@@ -129,6 +131,12 @@ export const CbnTodayScreen = (props: Props) => {
   }, [pickerLesson, preschool, primary]);
 
   const loadToday = async () => {
+    if (!CachedData.membershipActive) {
+      setLapsed(true);
+      setLoading(false);
+      return;
+    }
+    setLapsed(false);
     setLoading(true);
     setError(false);
     try {
@@ -170,6 +178,10 @@ export const CbnTodayScreen = (props: Props) => {
         }
         return;
       }
+      // Nothing came back for either age group. The server now refuses lapsed accounts, so before
+      // saying "no adventures scheduled", ask whether the account is simply lapsed.
+      const stillActive = await MembershipHelper.checkStatus(props.providerId);
+      if (stillActive === false) setLapsed(true);
       setLoading(false);
     } catch (ex) {
       console.error("[CbnToday] Failed to load today's lessons, retrying silently:", ex);
@@ -182,6 +194,11 @@ export const CbnTodayScreen = (props: Props) => {
       }, 3000);
     }
   };
+
+  useEffect(() => CachedData.subscribeMembership(active => {
+    setLapsed(!active);
+    if (active) loadToday();
+  }), []);
 
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
@@ -218,6 +235,21 @@ export const CbnTodayScreen = (props: Props) => {
     });
     return () => subscription.remove();
   }, [props.providerId]);
+
+  if (lapsed) {
+    return (
+      <View style={{ ...Styles.menuScreen, flex: 1 }}>
+        <MenuHeader headerText={t("cbnToday.chooseCategory", "Which age group are you teaching?")} />
+        <View style={{ ...Styles.menuWrapper, flex: 90 }}>
+          <EmptyState
+            icon="lock-outline"
+            message={t("cbnToday.membershipLapsed", "Your membership has lapsed")}
+            subMessage={t("cbnToday.membershipLapsedSub", "Renew your membership to see today's lessons. Lessons you already downloaded are still available in Downloads.")}
+          />
+        </View>
+      </View>
+    );
+  }
 
   if (loading) {
     return (

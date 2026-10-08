@@ -58,6 +58,16 @@ export const ContentBrowserScreen = (props: Props) => {
   const [fetching, setFetching] = React.useState(false);
   const [focusedItemId, setFocusedItemId] = React.useState<string | null>(null);
   const [membershipLapsed, setMembershipLapsed] = React.useState(false);
+  React.useEffect(() => CachedData.subscribeMembership(active => {
+    if (!active) {
+      setMembershipLapsed(true);
+      setItems([]);
+      setLoading(false);
+    } else {
+      setMembershipLapsed(false);
+      props.navigateTo("contentBrowser", { providerId: props.providerId, folderStack: props.folderStack || [] });
+    }
+  }), []);
   const initialFocusSet = React.useRef(false);
   const focusedIndexRef = React.useRef<number>(0);
   // Persistent per-card scale animation, keyed by folder id, so each card's

@@ -12,7 +12,7 @@ import {
   ScrollView
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Styles, CachedData, ProviderAuthHelper, Colors, Typography, CbnAutoDownload } from "../helpers";
+import { Styles, CachedData, ProviderAuthHelper, Colors, Typography, CbnAutoDownload, MembershipHelper } from "../helpers";
 import { SoundHelper } from "../helpers/SoundHelper";
 import { DeviceAuthorizationResponse, DeviceFlowState, ContentProviderAuthData, DeviceFlowHelper } from "../interfaces";
 import { DimensionHelper } from "../helpers/DimensionHelper";
@@ -207,7 +207,8 @@ export const ProviderDeviceAuthScreen = (props: Props) => {
       // Kick off an immediate background download check for providers with
       // their own auto-download job (e.g. CBN), rather than waiting for the
       // next periodic timer tick in App.tsx.
-      CbnAutoDownload.run();
+      // Find out right away whether this account is lapsed, then start the download check.
+      MembershipHelper.checkStatus(props.providerId).then(() => CbnAutoDownload.run());
 
       // Approver may have bound this screen to a plan type — enables "Today's Plan"
       const planTypeId = (result as { planTypeId?: string }).planTypeId;

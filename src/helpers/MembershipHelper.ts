@@ -25,7 +25,7 @@ export class MembershipHelper {
   static async loadCachedStatus(): Promise<boolean> {
     const stored = await CachedData.getAsyncStorage(STATUS_KEY);
     const active = stored === undefined || stored === null ? true : !!stored;
-    CachedData.membershipActive = active;
+    CachedData.setMembershipActive(active);
     return active;
   }
 
@@ -54,7 +54,7 @@ export class MembershipHelper {
       const data = await response.json();
       const active = !!data.active;
 
-      CachedData.membershipActive = active;
+      CachedData.setMembershipActive(active);
       await CachedData.setAsyncStorage(STATUS_KEY, active);
       await CachedData.setAsyncStorage(LAST_CHECK_KEY, Date.now());
 

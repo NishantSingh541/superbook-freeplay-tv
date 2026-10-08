@@ -1,3 +1,5 @@
+import { useState as useStateM, useEffect as useEffectM } from "react";
+import { MembershipHelper } from "../helpers/MembershipHelper";
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableHighlight, BackHandler, Image } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -114,7 +116,7 @@ export const ProviderSettingsScreen = (props: Props) => {
   };
 
   const renderAccountStatus = () => {
-    const active = CachedData.membershipActive;
+    const active = membershipActive;
     return (
       <View style={{
         flexDirection: "row",
@@ -272,6 +274,13 @@ export const ProviderSettingsScreen = (props: Props) => {
       </View>
     );
   };
+
+  const [membershipActive, setMembershipActive] = useStateM(CachedData.membershipActive);
+  useEffectM(() => {
+    const off = CachedData.subscribeMembership(setMembershipActive);
+    MembershipHelper.checkStatus(props.providerId);
+    return off;
+  }, []);
 
   const headerText = providerInfo?.name || t("providerSettings.header");
 

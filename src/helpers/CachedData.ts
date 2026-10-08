@@ -36,6 +36,18 @@ export class CachedData {
   // UC-D-03: defaults true (active) so a fresh install isn't wrongly
   // blocked before the first real membership check has completed.
   static membershipActive: boolean = true;
+  private static membershipListeners: Array<(active: boolean) => void> = [];
+  static subscribeMembership(fn: (active: boolean) => void): () => void {
+    CachedData.membershipListeners.push(fn);
+    return () => { CachedData.membershipListeners = CachedData.membershipListeners.filter(l => l !== fn); };
+  }
+  static setMembershipActive(active: boolean): void {
+    const changed = CachedData.membershipActive !== active;
+    CachedData.membershipActive = active;
+    if (changed) {
+      CachedData.membershipListeners.slice().forEach(l => { try { l(active); } catch (e) { /* ignore */ } });
+    }
+  }
   // A grid card currently has focus, and whether it is in the left-most column. The sidebar uses
   // these so LEFT opens it only when focus is leaving the grid, not when it moves between cards.
   static cardFocused: boolean = false;
