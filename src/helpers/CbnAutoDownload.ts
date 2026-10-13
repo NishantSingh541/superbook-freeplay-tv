@@ -226,12 +226,19 @@ export class CbnAutoDownload {
             title: entry.lesson_title,
             image: entry.thumb,
             category: entry.category,
+            scheduledDate: entry.schedule_date,
             messageFiles,
             downloadedAt: Date.now()
           });
           console.log(`[CbnAutoDownload] schedule ${entry.id} files already on disk, added to this account's downloads`);
         } else {
-          console.log(`[CbnAutoDownload] schedule ${entry.id} already fully cached, skipping`);
+          const existing = mine.find(e => e.downloadKey === downloadKey);
+          if (existing && !existing.scheduledDate && entry.schedule_date) {
+            await DownloadIndex.addEntry({ ...existing, scheduledDate: entry.schedule_date, category: existing.category ?? entry.category });
+            console.log(`[CbnAutoDownload] schedule ${entry.id} already cached, added its scheduled date`);
+          } else {
+            console.log(`[CbnAutoDownload] schedule ${entry.id} already fully cached, skipping`);
+          }
         }
         return;
       }
@@ -260,6 +267,7 @@ export class CbnAutoDownload {
         title: entry.lesson_title,
         image: entry.thumb,
         category: entry.category,
+            scheduledDate: entry.schedule_date,
         messageFiles,
         downloadedAt: Date.now()
       };

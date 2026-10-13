@@ -24,6 +24,8 @@ type Props = {
   lessonImage?: string;
   /** School type (454 = K-6, 455 = Preschool); derived from folderStack when omitted. */
   category?: number | null;
+  /** Date the lesson is scheduled for (YYYY-MM-DD), when started from Today's Lesson. */
+  scheduledDate?: string;
   startIndex: number;
   folderStack?: ContentFolder[];
   /**
@@ -252,6 +254,7 @@ export const ProviderDownloadScreen = (props: Props) => {
             description: props.description,
             image: lessonImage,
             category: downloadCategory(),
+            scheduledDate: props.scheduledDate,
             messageFiles: files,
             downloadedAt: Date.now()
           });

@@ -18,6 +18,8 @@ export interface DownloadedItemInterface {
   description?: string;
   image?: string;
   category?: number | null;
+  /** Date the lesson is scheduled for (YYYY-MM-DD). Missing for downloads not tied to a schedule. */
+  scheduledDate?: string;
   messageFiles: MessageFileInterface[];
   downloadedAt: number;
   lastAccessedAt?: number;

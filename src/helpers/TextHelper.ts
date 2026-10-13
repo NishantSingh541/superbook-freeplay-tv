@@ -26,3 +26,12 @@ export const decodeEntities = (s?: string | null): string => {
   out = out.replace(BREAKS, " ").replace(TAGS, ""); // tags that were stored escaped (&lt;b&gt;)
   return out.replace(/\s+/g, " ").trim();
 };
+
+/** "2026-09-27" -> "Sep 27, 2026" (or "September 27, 2026"). Parsed by hand so no timezone shifts the day. */
+export const formatScheduleDate = (ymd?: string | null, style: "short" | "long" = "short"): string => {
+  if (!ymd) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
+  if (!m) return "";
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.toLocaleDateString(undefined, { month: style === "long" ? "long" : "short", day: "numeric", year: "numeric" });
+};

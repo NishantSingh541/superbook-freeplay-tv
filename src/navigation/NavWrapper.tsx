@@ -35,6 +35,7 @@ export const NavWrapper = (props: Props) => {
   const recentlyCollapsed = useRef(false);
   const sidebarMounted = useRef(false);
   const lastScreenRef = useRef(CachedData.currentScreen);
+  const lastLeftAtRef = useRef(0);
 
   const fullScreenModeScreens = ["planDownload"];
   const isFullScreenMode = fullScreenModeScreens.includes(CachedData.currentScreen);
@@ -108,8 +109,25 @@ export const NavWrapper = (props: Props) => {
       props.sidebarState(false);
     }
     // Explicitly handle LEFT navigation to open sidebar
-    if (isLeft && !props.sidebarExpanded && !(CachedData.cardFocused && !CachedData.cardAtLeftEdge)) {
-      props.sidebarState(true);
+    if (isLeft) {
+      console.log(`[TVEvent] left action=${evt && evt.eventKeyAction} cardFocused=${CachedData.cardFocused} leftEdge=${CachedData.cardAtLeftEdge}`);
+    }
+    if (isLeft && !props.sidebarExpanded) {
+      const now = Date.now();
+      // One press = a key-down and a key-up event. By the time the second arrives, focus has already
+      // moved onto the left-most card, which looked like "LEFT pressed on the left-most card".
+      if (now - lastLeftAtRef.current < 350) return;
+      lastLeftAtRef.current = now;
+      if (!CachedData.cardFocused) {
+        props.sidebarState(true);
+      } else {
+        setTimeout(() => {
+          // This press moved focus between cards: keep the sidebar closed.
+          if (CachedData.cardFocusChangedAt >= now - 250) return;
+          // Otherwise LEFT was pressed on a card in the left-most column: open the sidebar.
+          if (CachedData.cardAtLeftEdge || !CachedData.cardFocused) props.sidebarState(true);
+        }, 150);
+      }
     }
   };
   useTVEventHandler(tvEventHandler as any);

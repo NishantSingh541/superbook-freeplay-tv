@@ -273,8 +273,7 @@ export const ContentBrowserScreen = (props: Props) => {
           initialFocusSet.current = true;
           focusedIndexRef.current = index;
           CachedData.lastFocusedIndex[screenKey] = index;
-          CachedData.cardFocused = true;
-          CachedData.cardAtLeftEdge = index % 3 === 0;
+          CachedData.noteCardFocus(index % 3 === 0);
           setFocusedItemId(folder.id);
           Animated.spring(scaleAnim, { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
@@ -439,7 +438,7 @@ export const ContentBrowserScreen = (props: Props) => {
         }}
         underlayColor={Colors.pressedBackground}
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFile(file); }}
-        onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedItemId(file.id); }}
+        onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; CachedData.noteCardFocus(index % 3 === 0); setFocusedItemId(file.id); }}
         onBlur={() => { CachedData.cardFocused = false; setFocusedItemId(prev => prev === file.id ? null : prev); }}
         hasTVPreferredFocus={shouldFocus}>
         <View style={{ width: "100%" }}>

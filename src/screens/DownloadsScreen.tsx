@@ -8,7 +8,7 @@ import { CachedData, Styles, Colors, Typography, DownloadIndex, StorageManager, 
 import { PlayerHelper } from "../helpers/PlayerHelper";
 import { ThumbnailCache } from "../helpers/ThumbnailCache";
 import { findNodeHandle as rnFindNodeHandle } from "react-native";
-import { decodeEntities } from "../helpers/TextHelper";
+import { decodeEntities, formatScheduleDate } from "../helpers/TextHelper";
 import { MenuHeader, EmptyState, SkeletonCard } from "../components";
 
 type Props = {
@@ -143,6 +143,10 @@ export const DownloadsScreen = (props: Props) => {
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
   };
 
+  // The lesson's scheduled date when it has one; otherwise the day it was downloaded.
+  const formatEntryDate = (e: DownloadedItemInterface) =>
+    e.scheduledDate ? formatScheduleDate(e.scheduledDate, "short") : formatDownloadedDate(e.downloadedAt);
+
   // --- Lesson card (grouped view) ---
   const getLessonCard = (entry: DownloadedItemInterface, index: number) => {
     const isFocused = focusedKey === entry.downloadKey;
@@ -166,7 +170,7 @@ export const DownloadsScreen = (props: Props) => {
             {...({ nextFocusRight: rowEnd && cardNodes[entry.downloadKey] ? rnFindNodeHandle(cardNodes[entry.downloadKey]) : undefined } as any)}
             underlayColor={Colors.pressedBackground}
             onPress={() => setPickerEntry(entry)}
-            onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedKey(entry.downloadKey); }}
+            onFocus={() => { CachedData.noteCardFocus(index % 3 === 0); setFocusedKey(entry.downloadKey); }}
             onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === entry.downloadKey ? null : prev)); }}
             hasTVPreferredFocus={!props.sidebarExpanded && index === 0}
           >
@@ -186,7 +190,7 @@ export const DownloadsScreen = (props: Props) => {
                 <Text style={{ ...Styles.smallWhiteText, textAlign: "center" }} numberOfLines={2}>{decodeEntities(entry.title)}</Text>
                 <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 2, textAlign: "center" }}>
                   {t("downloads.episodeCount", "{{count}} episodes", { count: videoCount })}
-                  {entry.downloadedAt ? ` • ${formatDownloadedDate(entry.downloadedAt)}` : ""}
+                  {entry.downloadedAt || entry.scheduledDate ? ` • ${formatEntryDate(entry)}` : ""}
                 </Text>
               </View>
             </View>
@@ -198,7 +202,7 @@ export const DownloadsScreen = (props: Props) => {
             {...({ nextFocusRight: rowEnd && cardNodes[`${entry.downloadKey}-delete`] ? rnFindNodeHandle(cardNodes[`${entry.downloadKey}-delete`]) : undefined } as any)}
             underlayColor="rgba(255,0,0,0.5)"
             onPress={() => confirmDelete(entry)}
-            onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = index % 3 === 0; setFocusedKey(`${entry.downloadKey}-delete`); }}
+            onFocus={() => { CachedData.noteCardFocus(index % 3 === 0); setFocusedKey(`${entry.downloadKey}-delete`); }}
             onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === `${entry.downloadKey}-delete` ? null : prev)); }}
             style={{
               flexDirection: "row",
@@ -236,7 +240,7 @@ export const DownloadsScreen = (props: Props) => {
           {...({ nextFocusRight: (fileIndex % 3 === 2 || fileIndex === entry.messageFiles.length - 1) && cardNodes[cardKey] ? rnFindNodeHandle(cardNodes[cardKey]) : undefined } as any)}
           underlayColor={Colors.pressedBackground}
           onPress={() => playEntry(entry, fileIndex)}
-          onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = fileIndex % 3 === 0; setFocusedKey(cardKey); }}
+          onFocus={() => { CachedData.noteCardFocus(fileIndex % 3 === 0); setFocusedKey(cardKey); }}
           onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === cardKey ? null : prev)); }}
           hasTVPreferredFocus={index === 0}
         >
@@ -430,7 +434,9 @@ export const DownloadsScreen = (props: Props) => {
           <View style={{ flex: 1 }} />
           {pickerEntry.downloadedAt && (
             <Text style={{ color: Colors.textSubtle, fontSize: Typography?.labelSmall ?? 12 }}>
-              {t("downloads.downloadedOn", "Downloaded {{date}}", { date: formatDownloadedDate(pickerEntry.downloadedAt) })}
+              {pickerEntry.scheduledDate
+                ? t("downloads.scheduledFor", "Scheduled {{date}}", { date: formatScheduleDate(pickerEntry.scheduledDate, "short") })
+                : t("downloads.downloadedOn", "Downloaded {{date}}", { date: formatDownloadedDate(pickerEntry.downloadedAt) })}
             </Text>
           )}
         </View>

@@ -52,6 +52,12 @@ export class CachedData {
   // these so LEFT opens it only when focus is leaving the grid, not when it moves between cards.
   static cardFocused: boolean = false;
   static cardAtLeftEdge: boolean = true;
+  static cardFocusChangedAt: number = 0;
+  static noteCardFocus(atLeftEdge: boolean): void {
+    CachedData.cardFocused = true;
+    CachedData.cardAtLeftEdge = atLeftEdge;
+    CachedData.cardFocusChangedAt = Date.now();
+  }
   // Set when playing a download so Back from the player re-opens that lesson's video list.
   static reopenDownloadKey: string | null = null;
 

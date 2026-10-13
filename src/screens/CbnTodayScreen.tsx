@@ -33,7 +33,8 @@ const CATEGORY_PRIMARY = 454;   // WordPress taxonomy term ID: "K-6" (displayed 
 // Shared card sizing — matches ContentBrowserScreen's folder/file cards so
 // every grid in the app has a consistent, polished look.
 import { findNodeHandle as rnFindNodeHandle } from "react-native";
-import { decodeEntities } from "../helpers/TextHelper";
+import { Animated as RNAnimated } from "react-native";
+import { decodeEntities, formatScheduleDate } from "../helpers/TextHelper";
 import { MembershipHelper } from "../helpers/MembershipHelper";
 
 const cardNodes: Record<string, any> = {};
@@ -60,6 +61,17 @@ export const CbnTodayScreen = (props: Props) => {
   const [pickerLesson, setPickerLesson] = useState<TodayLesson | null>(null);
   const [lapsed, setLapsed] = useState(!CachedData.membershipActive);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  // Header date: the open lesson's scheduled date (not today's date). The two-tile screen has no single
+  // lesson, so each tile shows its own date instead and the header shows none.
+  const headerDate = (): string => {
+    if (!pickerLesson) return "";
+    return formatScheduleDate(pickerLesson.scheduledDate, "long") || formatTodayDate();
+  };
+  const scaleAnimsRef = useRef<Record<string, RNAnimated.Value>>({});
+  const getScaleAnim = (id: string) => {
+    if (!scaleAnimsRef.current[id]) scaleAnimsRef.current[id] = new RNAnimated.Value(1);
+    return scaleAnimsRef.current[id];
+  };
 
   const focusStyle = (id: string) =>
     focusedId === id
@@ -74,6 +86,7 @@ export const CbnTodayScreen = (props: Props) => {
       coverImage: lesson.files[startIndex]?.thumbnail || lesson.lessonThumb || lesson.courseThumb,
       lessonImage: lesson.lessonThumb || lesson.courseThumb || lesson.files[0]?.thumbnail,
       category: lesson.category ?? undefined,
+      scheduledDate: lesson.scheduledDate,
       title: lesson.lessonTitle,
       startIndex,
       folderStack: [],
@@ -305,7 +318,7 @@ export const CbnTodayScreen = (props: Props) => {
         <MenuHeader
           headerText={pickerLesson.lessonTitle}
           badgeText={t("cbnToday.currentLesson", "Current Lesson")}
-          dateText={formatTodayDate()}
+          dateText={headerDate()}
         />
         <View
           style={{
@@ -384,7 +397,7 @@ export const CbnTodayScreen = (props: Props) => {
           )}
         </View>
         <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%" }}>
-          <ScrollView contentContainerStyle={{ padding: DimensionHelper.wp("2%") }}>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: DimensionHelper.wp("1%") }}>
           {Array.from({ length: Math.ceil(pickerLesson.files.length / 3) }, (_, rowIndex) => (
             <View key={`row-${rowIndex}`} style={{ flexDirection: "row" }}>
             {pickerLesson.files.slice(rowIndex * 3, rowIndex * 3 + 3).map((file, colIndex) => {
@@ -392,72 +405,90 @@ export const CbnTodayScreen = (props: Props) => {
               const isVideo = file.mediaType === "video";
               const isFocused = focusedId === file.id;
               return (
-                <View
+                <TouchableHighlight
                   key={file.id}
+                  testID={`cbn-today-video-${index}${isFocused ? "-focused" : ""}`}
                   style={{
                     flex: 1,
                     maxWidth: "31%",
+                    alignItems: "center",
                     marginHorizontal: DimensionHelper.wp("1%"),
-                    marginBottom: DimensionHelper.hp("3%")
+                    padding: 10,
+                    borderRadius: 16
                   }}
+                  underlayColor="transparent"
+                  ref={(el: any) => { cardNodes[file.id] = el; }}
+                  {...({ nextFocusRight: (colIndex === 2 || index === pickerLesson.files.length - 1) && cardNodes[file.id] ? rnFindNodeHandle(cardNodes[file.id]) : undefined } as any)}
+                  onPress={() => playLesson(pickerLesson, index)}
+                  onFocus={() => {
+                    CachedData.cardFocused = true;
+                    CachedData.cardAtLeftEdge = colIndex === 0;
+                    (CachedData as any).cardFocusChangedAt = Date.now();
+                    setFocusedId(file.id);
+                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
+                  }}
+                  onBlur={() => {
+                    CachedData.cardFocused = false;
+                    setFocusedId(prev => (prev === file.id ? null : prev));
+                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1, useNativeDriver: true, friction: 6, tension: 80 }).start();
+                  }}
+                  hasTVPreferredFocus={index === 0}
                 >
-                  <TouchableHighlight
-                    testID={`cbn-today-video-${index}${isFocused ? "-focused" : ""}`}
-                    ref={(el: any) => { cardNodes[file.id] = el; }}
-                    {...({ nextFocusRight: (colIndex === 2 || index === pickerLesson.files.length - 1) && cardNodes[file.id] ? rnFindNodeHandle(cardNodes[file.id]) : undefined } as any)}
-                    underlayColor={Colors.pressedBackground}
-                    onPress={() => playLesson(pickerLesson, index)}
-                    onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = colIndex === 0; setFocusedId(file.id); }}
-                    onBlur={() => { CachedData.cardFocused = false; setFocusedId(prev => (prev === file.id ? null : prev)); }}
-                    hasTVPreferredFocus={index === 0}
-                  >
-                    <View style={{
-                      width: "100%",
-                      borderRadius: CARD_BORDER_RADIUS,
-                      overflow: "hidden",
-                      borderWidth: 4,
-                      borderColor: isFocused ? Colors.primary : "transparent"
-                    }}>
-                      <View style={{ position: "relative" }}>
-                        {file.thumbnail ? (
-                          <Image
-                            style={{ height: CARD_IMAGE_HEIGHT, width: "100%" }}
-                            resizeMode="cover"
-                            source={{ uri: file.thumbnail }}
-                          />
-                        ) : (
-                          <View
-                            style={{
-                              height: CARD_IMAGE_HEIGHT,
-                              width: "100%",
-                              backgroundColor: Colors.backgroundCard,
-                              justifyContent: "center",
-                              alignItems: "center"
-                            }}>
-                            <Icon name="play-circle-outline" size={DimensionHelper.wp("4%")} color="rgba(255,255,255,0.5)" />
+                  <RNAnimated.View style={{
+                    width: "100%",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    transform: [{ scale: getScaleAnim(file.id) }],
+                    borderWidth: 4,
+                    borderColor: isFocused ? Colors.primary : "transparent",
+                    ...(isFocused ? {
+                      shadowColor: Colors.primary,
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.6,
+                      shadowRadius: 16,
+                      elevation: 10
+                    } : {})
+                  }}>
+                    <View style={{ position: "relative" }}>
+                      {file.thumbnail ? (
+                        <Image
+                          style={{ height: CARD_IMAGE_HEIGHT, width: "100%", borderRadius: 20 }}
+                          resizeMode="cover"
+                          source={{ uri: file.thumbnail }}
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            height: CARD_IMAGE_HEIGHT,
+                            width: "100%",
+                            borderRadius: 20,
+                            backgroundColor: Colors.backgroundCard,
+                            justifyContent: "center",
+                            alignItems: "center"
+                          }}>
+                          <Icon name="play-circle-outline" size={DimensionHelper.wp("4%")} color="rgba(255,255,255,0.5)" />
+                        </View>
+                      )}
+                      {isVideo && file.thumbnail && (
+                        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
+                          <View style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 30, padding: 8 }}>
+                            <Icon name="play-arrow" size={DimensionHelper.wp("3%")} color="#fff" />
                           </View>
-                        )}
-                        {isVideo && file.thumbnail && (
-                          <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center" }}>
-                            <View style={{ backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 30, padding: 8 }}>
-                              <Icon name="play-arrow" size={DimensionHelper.wp("3%")} color="#fff" />
-                            </View>
-                          </View>
-                        )}
-                      </View>
-                      <Text
-                        style={{ color: "#fff", fontSize: Typography.labelMedium, marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
-                        numberOfLines={2}
-                        ellipsizeMode="tail">
-                        {decodeEntities(file.title)}
-                      </Text>
-                      <Text
-                        style={{ color: "rgba(255,255,255,0.5)", fontSize: Typography.labelSmall, textAlign: "center" }}>
-                        {isVideo ? t("contentBrowser.fileType.video") : t("contentBrowser.fileType.image")}
-                      </Text>
+                        </View>
+                      )}
                     </View>
-                  </TouchableHighlight>
-                </View>
+                    <Text
+                      style={{ color: "#fff", fontSize: DimensionHelper.wp("1.2%"), marginTop: DimensionHelper.hp("1%"), textAlign: "center" }}
+                      numberOfLines={2}>
+                      {decodeEntities(file.title)}
+                    </Text>
+                    <Text
+                      style={{ color: "rgba(255,255,255,0.6)", fontSize: DimensionHelper.wp("1%"), marginTop: 2, textAlign: "center" }}
+                      numberOfLines={1}>
+                      {isVideo ? t("contentBrowser.fileType.video") : t("contentBrowser.fileType.image")}
+                    </Text>
+                  </RNAnimated.View>
+                </TouchableHighlight>
               );
             })}
             </View>
@@ -495,7 +526,7 @@ export const CbnTodayScreen = (props: Props) => {
         }}
         underlayColor="transparent"
         onPress={onPress}
-        onFocus={() => { CachedData.cardFocused = true; CachedData.cardAtLeftEdge = id === "primary"; setFocusedId(id); }}
+        onFocus={() => { CachedData.noteCardFocus(id === "primary"); setFocusedId(id); }}
         onBlur={() => { CachedData.cardFocused = false; setFocusedId(prev => (prev === id ? null : prev)); }}
         hasTVPreferredFocus={autoFocus}
       >
@@ -527,6 +558,13 @@ export const CbnTodayScreen = (props: Props) => {
             numberOfLines={1}>
             {curriculumLabel}
           </Text>
+          {lesson?.scheduledDate ? (
+            <Text
+              style={{ color: "rgba(255,255,255,0.6)", fontSize: DimensionHelper.wp("1.1%"), marginTop: 2, textAlign: "center" }}
+              numberOfLines={1}>
+              {t("cbnToday.scheduledFor", "Scheduled {{date}}", { date: formatScheduleDate(lesson.scheduledDate, "short") })}
+            </Text>
+          ) : null}
           {!lesson && (
             <Text
               style={{ color: "rgba(255,255,255,0.4)", fontSize: DimensionHelper.wp("1%"), marginTop: DimensionHelper.hp("0.5%"), textAlign: "center", paddingHorizontal: DimensionHelper.wp("1%") }}>
@@ -543,7 +581,7 @@ export const CbnTodayScreen = (props: Props) => {
       <MenuHeader
         headerText={t("cbnToday.chooseCategory", "Which age group are you teaching?")}
         badgeText={t("cbnToday.currentLesson", "Current Lesson")}
-        dateText={formatTodayDate()}
+        dateText={headerDate()}
       />
       <LinearGradient colors={[Colors.background, Colors.surface, Colors.surfaceDark]} style={{ flex: 1, width: "100%", alignItems: "flex-start", justifyContent: "flex-start", paddingTop: DimensionHelper.hp("4%"), paddingLeft: DimensionHelper.wp("2%") }}>
         <View style={{ flexDirection: "row" }}>
