@@ -161,8 +161,7 @@ export const DownloadsScreen = (props: Props) => {
           width: "100%",
           borderRadius: 20,
           overflow: "hidden",
-          borderWidth: 4,
-          borderColor: isFocused ? Colors.primary : "transparent"
+          ...(isFocused ? Styles.cardFocused : Styles.cardUnfocused)
         }}>
           <TouchableHighlight
             testID={`download-lesson-${entry.downloadKey}${isFocused ? "-focused" : ""}`}
@@ -248,8 +247,7 @@ export const DownloadsScreen = (props: Props) => {
             width: "100%",
             borderRadius: 20,
             overflow: "hidden",
-            borderWidth: 4,
-            borderColor: isFocused ? Colors.primary : "transparent"
+            ...(isFocused ? Styles.cardFocused : Styles.cardUnfocused)
           }}>
             <View style={{ position: "relative" }}>
               {file.image ? (

@@ -275,7 +275,7 @@ export const ContentBrowserScreen = (props: Props) => {
           CachedData.lastFocusedIndex[screenKey] = index;
           CachedData.noteCardFocus(index % 3 === 0);
           setFocusedItemId(folder.id);
-          Animated.spring(scaleAnim, { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
+          Animated.spring(scaleAnim, { toValue: 1.03, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
         onBlur={() => {
           CachedData.cardFocused = false;
@@ -288,15 +288,8 @@ export const ContentBrowserScreen = (props: Props) => {
           borderRadius: 20,
           overflow: "hidden",
           transform: [{ scale: scaleAnim }],
-          borderWidth: 4,
-          borderColor: isFocused ? Colors.primary : "transparent",
-          ...(isFocused ? {
-            shadowColor: Colors.primary,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.6,
-            shadowRadius: 16,
-            elevation: 10
-          } : {})
+          borderWidth: 3,
+          borderColor: isFocused ? Colors.focusRing : "transparent"
         }}>
           {localOverrideImage ? (
             <Image
@@ -425,16 +418,8 @@ export const ContentBrowserScreen = (props: Props) => {
         {...({ nextFocusRight: (index % 3 === 2 || index === items.length - 1) && cardNodes[file.id] ? rnFindNodeHandle(cardNodes[file.id]) : undefined } as any)}
         style={{
           ...styles.item,
-          ...(isFocused ? {
-            backgroundColor: Colors.primary,
-            borderRadius: 20,
-            transform: [{ scale: 1.05 }],
-            shadowColor: Colors.primary,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.6,
-            shadowRadius: 20,
-            elevation: 12
-          } : { borderWidth: 2, borderColor: "transparent" })
+          borderRadius: 20,
+          ...(isFocused ? Styles.cardFocused : Styles.cardUnfocused)
         }}
         underlayColor={Colors.pressedBackground}
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFile(file); }}

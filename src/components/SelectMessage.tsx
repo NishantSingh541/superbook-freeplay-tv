@@ -100,14 +100,7 @@ export const SelectMessage = (props: Props) => {
         <TouchableHighlight
           style={[
             styles.card,
-            isFocused ? {
-              borderWidth: 2,
-              borderColor: Colors.primary,
-              transform: [{ scale: 1.03 }]
-            } : isCurrent ? {
-              borderWidth: 2,
-              borderColor: Colors.success
-            } : { borderWidth: 2, borderColor: "transparent" }
+            isFocused ? Styles.cardFocused : isCurrent ? { ...Styles.cardUnfocused, borderColor: Colors.success } : Styles.cardUnfocused
           ]}
           hasTVPreferredFocus={shouldFocus}
           focusable={true}

@@ -160,8 +160,8 @@ export const ProvidersScreen = (props: Props) => {
               borderRadius: 8,
               justifyContent: "center",
               alignItems: "center",
-              borderWidth: 2,
-              borderColor: isFocused ? Colors.primary : (providerInfo.implemented ? Colors.borderAccent : "rgba(100,100,100,0.15)")
+              borderWidth: 3,
+              borderColor: isFocused ? Colors.focusRing : (providerInfo.implemented ? Colors.borderAccent : "rgba(100,100,100,0.15)")
             }}>
             {logo ? (
               <View

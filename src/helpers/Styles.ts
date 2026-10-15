@@ -46,6 +46,8 @@ export const Colors = {
   // State colors (derived from primary so partners don't tune 4 alphas per fork)
   activeBackground: rgba(brand.primary, 0.12),
   hoverBackground: rgba(brand.primary, 0.08),
+  focusRing: "#FFFFFF",
+  navFocusBackground: "rgba(255,255,255,0.16)",
   focusBackground: "rgba(255,255,255,0.03)",
   pressedBackground: rgba(brand.primary, 0.8),
 
@@ -250,15 +252,7 @@ export const Styles = StyleSheet.create({
 
   // Sidebar accents
   navAccent: { backgroundColor: Colors.navBackground },
-  navItemActiveBackground: {
-    backgroundColor: Colors.activeBackground,
-    borderRadius: 8
-  },
-  navItemFocusBackground: {
-    backgroundColor: Colors.focusBackground,
-    borderRadius: 8
-  },
-
+    
   // Card styles (shared)
   card: {
     borderRadius: 12,
@@ -266,8 +260,12 @@ export const Styles = StyleSheet.create({
     backgroundColor: Colors.backgroundCard
   },
   cardFocused: {
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    transform: [{ scale: 1.02 }]
-  }
+    borderWidth: 3,
+    borderColor: Colors.focusRing,
+    transform: [{ scale: 1.03 }]
+  },
+  cardUnfocused: {
+    borderWidth: 3,
+    borderColor: "transparent"
+  },
 });

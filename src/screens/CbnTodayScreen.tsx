@@ -75,8 +75,8 @@ export const CbnTodayScreen = (props: Props) => {
 
   const focusStyle = (id: string) =>
     focusedId === id
-      ? { borderWidth: 2, borderColor: Colors.primary, transform: [{ scale: 1.03 }] }
-      : { borderWidth: 2, borderColor: "transparent" };
+      ? Styles.cardFocused
+      : Styles.cardUnfocused;
 
   const playLesson = (lesson: TodayLesson, startIndex: number = 0) => {
     CachedData.messageFiles = lesson.files.map(toMessageFile);
@@ -425,7 +425,7 @@ export const CbnTodayScreen = (props: Props) => {
                     CachedData.cardAtLeftEdge = colIndex === 0;
                     (CachedData as any).cardFocusChangedAt = Date.now();
                     setFocusedId(file.id);
-                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1.06, useNativeDriver: true, friction: 6, tension: 80 }).start();
+                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1.03, useNativeDriver: true, friction: 6, tension: 80 }).start();
                   }}
                   onBlur={() => {
                     CachedData.cardFocused = false;
@@ -439,15 +439,8 @@ export const CbnTodayScreen = (props: Props) => {
                     borderRadius: 20,
                     overflow: "hidden",
                     transform: [{ scale: getScaleAnim(file.id) }],
-                    borderWidth: 4,
-                    borderColor: isFocused ? Colors.primary : "transparent",
-                    ...(isFocused ? {
-                      shadowColor: Colors.primary,
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.6,
-                      shadowRadius: 16,
-                      elevation: 10
-                    } : {})
+                    borderWidth: 3,
+          borderColor: isFocused ? Colors.focusRing : "transparent"
                   }}>
                     <View style={{ position: "relative" }}>
                       {file.thumbnail ? (

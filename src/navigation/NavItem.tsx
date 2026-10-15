@@ -23,6 +23,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
   // Track if this is the initial mount - only use hasTVPreferredFocus on first render
   const isInitialMount = useRef(true);
   const [, forceUpdate] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleFocusChange = (focused: boolean) => {
     // After first focus event, disable hasTVPreferredFocus to allow normal navigation
@@ -36,7 +37,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
     }
   };
 
-  const color = props.selected ? Colors.textPrimary : Colors.textSecondary;
+  const color = props.selected || isFocused ? Colors.textPrimary : Colors.textSecondary;
 
   const iconContainer = {
     width: DimensionHelper.wp("10%"),
@@ -47,7 +48,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
   return (
     <TouchableHighlight
       testID={props.testID}
-      underlayColor={Colors.hoverBackground}
+      underlayColor={props.selected ? Colors.primary : Colors.navFocusBackground}
       onPress={() => {
         props.setExpanded(false);
         if (props.onPress) props.onPress();
@@ -62,13 +63,18 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
         alignSelf: "stretch",
         backgroundColor: props.selected
           ? Colors.primary
-          : "transparent"
+          : isFocused ? Colors.navFocusBackground : "transparent",
+        borderWidth: 2, // always 2 so nothing shifts
+        borderColor: isFocused && props.selected ? "rgba(255,255,255,0.85)" : "transparent",
+        transform: [{ scale: isFocused ? 1.04 : 1 }]
       }}
       hasTVPreferredFocus={isInitialMount.current && props.expanded && props.selected}
       onFocus={() => {
+        setIsFocused(true);
         handleFocusChange(true);
       }}
       onBlur={() => {
+        setIsFocused(false);
         handleFocusChange(false);
       }}
       ref={ref as any}

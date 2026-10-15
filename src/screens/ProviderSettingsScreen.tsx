@@ -173,8 +173,8 @@ export const ProviderSettingsScreen = (props: Props) => {
           padding: DimensionHelper.wp("1.5%"),
           marginBottom: DimensionHelper.hp("1.5%"),
           borderRadius: 8,
-          borderWidth: 2,
-          borderColor: isFocused ? Colors.primary : Colors.borderAccent,
+          borderWidth: 3,
+          borderColor: isFocused ? Colors.focusRing : Colors.borderAccent,
           backgroundColor: Colors.surface
         }}>
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
@@ -204,8 +204,8 @@ export const ProviderSettingsScreen = (props: Props) => {
           padding: DimensionHelper.wp("1.5%"),
           marginTop: DimensionHelper.hp("2%"),
           borderRadius: 8,
-          borderWidth: 2,
-          borderColor: isFocused ? Colors.primary : Colors.borderAccent,
+          borderWidth: 3,
+          borderColor: isFocused ? Colors.focusRing : Colors.borderAccent,
           backgroundColor: Colors.backgroundCard
         }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
