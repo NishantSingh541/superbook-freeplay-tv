@@ -65,7 +65,8 @@ export const CbnTodayScreen = (props: Props) => {
   // lesson, so each tile shows its own date instead and the header shows none.
   const headerDate = (): string => {
     if (!pickerLesson) return "";
-    return formatScheduleDate(pickerLesson.scheduledDate, "long") || formatTodayDate();
+    const d = formatScheduleDate(pickerLesson.scheduledDate, "short");
+    return d ? t("cbnToday.scheduledFor", "Scheduled {{date}}", { date: d }) : formatTodayDate();
   };
   const scaleAnimsRef = useRef<Record<string, RNAnimated.Value>>({});
   const getScaleAnim = (id: string) => {
@@ -143,6 +144,21 @@ export const CbnTodayScreen = (props: Props) => {
     return () => backHandler.remove();
   }, [pickerLesson, preschool, primary]);
 
+  // Top level of this screen (age-group tiles, loading or lapsed screen): Back opens the sidebar
+  // instead of falling through to Android's default, which closes the app. The picker's handler
+  // above registers later, so it still runs first while a lesson is open. If the sidebar is
+  // already open, let Back fall through to normal Android TV behaviour.
+  const sidebarExpandedRef = useRef(props.sidebarExpanded);
+  sidebarExpandedRef.current = props.sidebarExpanded;
+  useEffect(() => {
+    const topBack = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (sidebarExpandedRef.current) return false;
+      props.sidebarState(true);
+      return true;
+    });
+    return () => topBack.remove();
+  }, []);
+
   const loadToday = async () => {
     if (!CachedData.membershipActive) {
       setLapsed(true);
@@ -152,6 +168,7 @@ export const CbnTodayScreen = (props: Props) => {
     setLapsed(false);
     setLoading(true);
     setError(false);
+    loadStartRef.current = Date.now();
     try {
       const provider = getProvider(props.providerId);
       if (!provider || !provider.getTodayLesson) {
@@ -164,9 +181,11 @@ export const CbnTodayScreen = (props: Props) => {
           provider.getTodayLesson(CATEGORY_PRESCHOOL, auth),
           provider.getTodayLesson(CATEGORY_PRIMARY, auth)
         ]),
-        8000,
+        30000,
         "loading today's lessons"
       );
+      console.log(`[Timing] Today's lessons loaded in ${Date.now() - loadStartRef.current}ms`);
+      failCountRef.current = 0;
 
       if (pre && !prim) {
         setPreschool(pre);
@@ -202,6 +221,14 @@ export const CbnTodayScreen = (props: Props) => {
       // idle for a while is common and usually resolves on the very next
       // attempt. Keep the loading state up and just quietly try again
       // rather than making the user tap a manual retry button.
+      failCountRef.current += 1;
+      console.log(`[Timing] Today's lessons failed after ${Date.now() - loadStartRef.current}ms (attempt ${failCountRef.current}/3)`);
+      if (failCountRef.current >= 3) {
+        // Silent retries exhausted: stop spinning and offer a Retry button instead.
+        setLoading(false);
+        setError(true);
+        return;
+      }
       retryTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current) loadToday();
       }, 3000);
@@ -214,6 +241,8 @@ export const CbnTodayScreen = (props: Props) => {
   }), []);
 
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failCountRef = useRef(0);
+  const loadStartRef = useRef(0);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -260,6 +289,20 @@ export const CbnTodayScreen = (props: Props) => {
             subMessage={t("cbnToday.membershipLapsedSub", "Renew your membership to see today's lessons. Lessons you already downloaded are still available in Downloads.")}
           />
         </View>
+      </View>
+    );
+  }
+
+  if (error && !lapsed) {
+    return (
+      <View style={{ flex: 1 }}>
+        <EmptyState
+          icon="wifi-off"
+          message={t("cbnToday.loadFailed", "Couldn't load today's lessons")}
+          subMessage={t("cbnToday.loadFailedSub", "Check the internet connection, then try again. Downloaded lessons still play from Downloads.")}
+          actionLabel={t("common.retry", "Retry")}
+          onAction={() => { failCountRef.current = 0; loadToday(); }}
+        />
       </View>
     );
   }

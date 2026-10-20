@@ -58,6 +58,9 @@ export const ContentBrowserScreen = (props: Props) => {
   const [fetching, setFetching] = React.useState(false);
   const [focusedItemId, setFocusedItemId] = React.useState<string | null>(null);
   const [membershipLapsed, setMembershipLapsed] = React.useState(false);
+  const [loadFailed, setLoadFailed] = React.useState(false);
+  const failCountRef = React.useRef(0);
+  const loadStartRef = React.useRef(0);
   React.useEffect(() => CachedData.subscribeMembership(active => {
     if (!active) {
       setMembershipLapsed(true);
@@ -129,6 +132,8 @@ export const ContentBrowserScreen = (props: Props) => {
 
     const version = ++requestVersionRef.current;
     setLoading(true);
+    setLoadFailed(false);
+    loadStartRef.current = Date.now();
 
     try {
       const auth = await ProviderAuthHelper.refreshIfNeeded(props.providerId);
@@ -136,10 +141,12 @@ export const ContentBrowserScreen = (props: Props) => {
 
       const data = await TimeoutHelper.withTimeout(
         provider.browse(currentFolder?.path ?? null, auth),
-        8000,
+        30000,
         "browsing content"
       );
       if (version !== requestVersionRef.current) return;
+      console.log(`[Timing] Browse loaded in ${Date.now() - loadStartRef.current}ms`);
+      failCountRef.current = 0;
 
       setItems(data.map(i => ({ ...i, title: decodeEntities(i.title) })) as ContentItem[]);
       setLoading(false);
@@ -150,6 +157,13 @@ export const ContentBrowserScreen = (props: Props) => {
       // No error screen — keep the loading state and quietly retry rather
       // than leaving the screen stuck (this previously had no error
       // handling at all, so a stalled connection left it loading forever).
+      failCountRef.current += 1;
+      console.log(`[Timing] Browse failed after ${Date.now() - loadStartRef.current}ms (attempt ${failCountRef.current}/3)`);
+      if (failCountRef.current >= 3) {
+        // Silent retries exhausted: stop spinning and offer a Retry button instead.
+        if (version === requestVersionRef.current) { setLoading(false); setLoadFailed(true); }
+        return;
+      }
       setTimeout(() => {
         if (version === requestVersionRef.current) loadData();
       }, 3000);
@@ -421,7 +435,7 @@ export const ContentBrowserScreen = (props: Props) => {
           borderRadius: 20,
           ...(isFocused ? Styles.cardFocused : Styles.cardUnfocused)
         }}
-        underlayColor={Colors.pressedBackground}
+        underlayColor="transparent"
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = index; handleSelectFile(file); }}
         onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = index; CachedData.lastFocusedIndex[screenKey] = index; CachedData.noteCardFocus(index % 3 === 0); setFocusedItemId(file.id); }}
         onBlur={() => { CachedData.cardFocused = false; setFocusedItemId(prev => prev === file.id ? null : prev); }}
@@ -535,6 +549,9 @@ export const ContentBrowserScreen = (props: Props) => {
 
     if (membershipLapsed) {
       return <EmptyState icon="lock-outline" message={t("contentBrowser.membershipLapsed", "Your membership has lapsed")} subMessage={t("contentBrowser.membershipLapsedSub", "Renew your membership to browse the catalog. Previously downloaded lessons are still available in Downloads.")} />;
+    }
+    if (loadFailed) {
+      return <EmptyState icon="wifi-off" message={t("contentBrowser.loadFailed", "Couldn't load lessons")} subMessage={t("contentBrowser.loadFailedSub", "Check the internet connection, then try again.")} actionLabel={t("common.retry", "Retry")} onAction={() => { failCountRef.current = 0; loadData(); }} />;
     }
 
     if (items.length === 0) {

@@ -193,7 +193,7 @@ export const ProviderSettingsScreen = (props: Props) => {
     return (
       <TouchableHighlight
         testID="provider-settings-disconnect"
-        underlayColor={Colors.pressedBackground}
+        underlayColor="transparent"
         onPress={handleDisconnect}
         onFocus={() => setFocusedRow("disconnect")}
         onBlur={() => setFocusedRow(prev => (prev === "disconnect" ? null : prev))}

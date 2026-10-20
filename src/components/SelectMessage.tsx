@@ -105,7 +105,7 @@ export const SelectMessage = (props: Props) => {
           hasTVPreferredFocus={shouldFocus}
           focusable={true}
           ref={data.index === 0 ? firstItemRef : null}
-          underlayColor={Colors.pressedBackground}
+          underlayColor="transparent"
           onPress={() => handleSelect(data.item.index)}
           onFocus={() => setFocusedIndex(data.item.index)}
           onBlur={() => setFocusedIndex(prev => prev === data.item.index ? null : prev)}

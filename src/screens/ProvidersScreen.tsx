@@ -144,7 +144,7 @@ export const ProvidersScreen = (props: Props) => {
           ...styles.item,
           ...(isFocused ? { transform: [{ scale: 1.03 }] } : {})
         }}
-        underlayColor={Colors.pressedBackground}
+        underlayColor="transparent"
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = data.index; handleSelectProvider(providerInfo); }}
         onFocus={() => { initialFocusSet.current = true; focusedIndexRef.current = data.index; setFocusedItemId(providerInfo.id); }}
         onBlur={() => { setFocusedItemId(prev => prev === providerInfo.id ? null : prev); }}

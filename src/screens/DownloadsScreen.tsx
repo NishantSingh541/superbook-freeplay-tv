@@ -167,7 +167,7 @@ export const DownloadsScreen = (props: Props) => {
             testID={`download-lesson-${entry.downloadKey}${isFocused ? "-focused" : ""}`}
             ref={(el: any) => { cardNodes[entry.downloadKey] = el; }}
             {...({ nextFocusRight: rowEnd && cardNodes[entry.downloadKey] ? rnFindNodeHandle(cardNodes[entry.downloadKey]) : undefined } as any)}
-            underlayColor={Colors.pressedBackground}
+            underlayColor="transparent"
             onPress={() => setPickerEntry(entry)}
             onFocus={() => { CachedData.noteCardFocus(index % 3 === 0); setFocusedKey(entry.downloadKey); }}
             onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === entry.downloadKey ? null : prev)); }}
@@ -237,7 +237,7 @@ export const DownloadsScreen = (props: Props) => {
           style={{ width: "100%" }}
           ref={(el: any) => { cardNodes[cardKey] = el; }}
           {...({ nextFocusRight: (fileIndex % 3 === 2 || fileIndex === entry.messageFiles.length - 1) && cardNodes[cardKey] ? rnFindNodeHandle(cardNodes[cardKey]) : undefined } as any)}
-          underlayColor={Colors.pressedBackground}
+          underlayColor="transparent"
           onPress={() => playEntry(entry, fileIndex)}
           onFocus={() => { CachedData.noteCardFocus(fileIndex % 3 === 0); setFocusedKey(cardKey); }}
           onBlur={() => { CachedData.cardFocused = false; setFocusedKey(prev => (prev === cardKey ? null : prev)); }}
