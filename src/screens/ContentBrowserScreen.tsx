@@ -537,6 +537,7 @@ export const ContentBrowserScreen = (props: Props) => {
             data={skeletonData}
             numColumns={3}
             keyExtractor={item => item.id}
+            contentContainerStyle={{ paddingVertical: DimensionHelper.hp("2%") }}
             renderItem={() => (
               <View style={{ ...styles.item, padding: 10 }}>
                 <SkeletonCard width="100%" height={DimensionHelper.hp("25%")} />
@@ -570,10 +571,13 @@ export const ContentBrowserScreen = (props: Props) => {
           numColumns={3}
           renderItem={getCard}
           keyExtractor={item => item.id}
+          // Room above the first row and below the last so a focused card's 3% grow and white ring
+          // aren't clipped by the list edges (Today's gets the same room from padding around its cards).
+          contentContainerStyle={{ paddingVertical: DimensionHelper.hp("2%") }}
           initialScrollIndex={initialRow}
           getItemLayout={(_data, idx) => ({
             length: DimensionHelper.hp("35%"),
-            offset: DimensionHelper.hp("35%") * idx,
+            offset: DimensionHelper.hp("2%") + DimensionHelper.hp("35%") * idx,
             index: idx
           })}
         />

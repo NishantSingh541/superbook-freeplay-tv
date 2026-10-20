@@ -39,8 +39,11 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
 
   const color = props.selected || isFocused ? Colors.textPrimary : Colors.textSecondary;
 
+  // Icon box: was wp 10% (~192px at 1080p) around a ~63px icon, which left a wide gap and
+  // squeezed the label ("Today's Lesson" truncated). wp 5% still fits the icon and keeps it
+  // centred in the collapsed sidebar, and every item uses the same box so icons stay aligned.
   const iconContainer = {
-    width: DimensionHelper.wp("10%"),
+    width: DimensionHelper.wp("5%"),
     alignItems: "center",
     justifyContent: "center"
   } as any;
@@ -124,6 +127,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
               fontSize: DimensionHelper.wp("1.4%"),
               color: color,
               flex: 1,
+              marginLeft: DimensionHelper.wp("0.6%"),
               textAlign: "left"
             }}>
             {props.text}
