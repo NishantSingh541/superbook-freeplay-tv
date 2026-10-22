@@ -31,6 +31,9 @@
     "cbn"
   ],
   "colors": {
+    "focusBorder": "#ff3344",
+    "focusText": "#000000",
+    "focusBackground": "#ffffff",
     "primary": "#cb151b",
     "primaryLight": "#f48fb1",
     "primaryDark": "#8e0f14",

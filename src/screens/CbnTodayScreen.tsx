@@ -468,7 +468,7 @@ export const CbnTodayScreen = (props: Props) => {
                     CachedData.cardAtLeftEdge = colIndex === 0;
                     (CachedData as any).cardFocusChangedAt = Date.now();
                     setFocusedId(file.id);
-                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1.03, useNativeDriver: true, friction: 6, tension: 80 }).start();
+                    RNAnimated.spring(getScaleAnim(file.id), { toValue: 1.08, useNativeDriver: true, friction: 6, tension: 80 }).start();
                   }}
                   onBlur={() => {
                     CachedData.cardFocused = false;

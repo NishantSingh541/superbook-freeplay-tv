@@ -289,7 +289,7 @@ export const ContentBrowserScreen = (props: Props) => {
           CachedData.lastFocusedIndex[screenKey] = index;
           CachedData.noteCardFocus(index % 3 === 0);
           setFocusedItemId(folder.id);
-          Animated.spring(scaleAnim, { toValue: 1.03, useNativeDriver: true, friction: 6, tension: 80 }).start();
+          Animated.spring(scaleAnim, { toValue: 1.08, useNativeDriver: true, friction: 6, tension: 80 }).start();
         }}
         onBlur={() => {
           CachedData.cardFocused = false;

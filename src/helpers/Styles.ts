@@ -16,6 +16,11 @@ const rgba = (hex: string, alpha: number) => {
 const brand = Branding.colors;
 
 // Centralized color palette for consistency. Brand-tinted values come from branding.json.
+// Focus tokens come from branding.json (colors.focusBackground / focusText / focusBorder); the client's values are the fallbacks.
+const FOCUS_BORDER: string = (brand as any).focusBorder ?? "#ff3344";
+const FOCUS_FILL: string = (brand as any).focusBackground ?? "#ffffff";
+const FOCUS_TEXT: string = (brand as any).focusText ?? "#000000";
+
 export const Colors = {
   // Brand colors
   primary: brand.primary,
@@ -46,7 +51,10 @@ export const Colors = {
   // State colors (derived from primary so partners don't tune 4 alphas per fork)
   activeBackground: rgba(brand.primary, 0.12),
   hoverBackground: rgba(brand.primary, 0.08),
-  focusRing: "#FFFFFF",
+  focusRing: FOCUS_BORDER,
+  focusBorder: FOCUS_BORDER,
+  focusFill: FOCUS_FILL,
+  focusText: FOCUS_TEXT,
   navFocusBackground: "rgba(255,255,255,0.16)",
   focusBackground: "rgba(255,255,255,0.03)",
   pressedBackground: rgba(brand.primary, 0.8),
@@ -262,7 +270,7 @@ export const Styles = StyleSheet.create({
   cardFocused: {
     borderWidth: 3,
     borderColor: Colors.focusRing,
-    transform: [{ scale: 1.03 }]
+    transform: [{ scale: 1.08 }]
   },
   cardUnfocused: {
     borderWidth: 3,

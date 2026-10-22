@@ -37,7 +37,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
     }
   };
 
-  const color = props.selected || isFocused ? Colors.textPrimary : Colors.textSecondary;
+  const color = props.selected ? Colors.textPrimary : isFocused ? Colors.focusText : Colors.textSecondary;
 
   // Icon box: was wp 10% (~192px at 1080p) around a ~63px icon, which left a wide gap and
   // squeezed the label ("Today's Lesson" truncated). wp 5% still fits the icon and keeps it
@@ -51,7 +51,7 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
   return (
     <TouchableHighlight
       testID={props.testID}
-      underlayColor={props.selected ? Colors.primary : Colors.navFocusBackground}
+      underlayColor={props.selected ? Colors.primary : Colors.focusFill}
       onPress={() => {
         props.setExpanded(false);
         if (props.onPress) props.onPress();
@@ -66,10 +66,10 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
         alignSelf: "stretch",
         backgroundColor: props.selected
           ? Colors.primary
-          : isFocused ? Colors.navFocusBackground : "transparent",
+          : isFocused ? Colors.focusFill : "transparent",
         borderWidth: 2, // always 2 so nothing shifts
         borderColor: isFocused && props.selected ? "rgba(255,255,255,0.85)" : "transparent",
-        transform: [{ scale: isFocused ? 1.04 : 1 }]
+        transform: [{ scale: isFocused ? 1.05 : 1 }]
       }}
       hasTVPreferredFocus={isInitialMount.current && props.expanded && props.selected}
       onFocus={() => {

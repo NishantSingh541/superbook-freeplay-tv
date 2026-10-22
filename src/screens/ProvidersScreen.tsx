@@ -142,7 +142,7 @@ export const ProvidersScreen = (props: Props) => {
         testID={`providers-card-${providerInfo.id}${isFocused ? "-focused" : ""}`}
         style={{
           ...styles.item,
-          ...(isFocused ? { transform: [{ scale: 1.03 }] } : {})
+          ...(isFocused ? { transform: [{ scale: 1.08 }] } : {})
         }}
         underlayColor="transparent"
         onPress={() => { CachedData.lastFocusedIndex[screenKey] = data.index; handleSelectProvider(providerInfo); }}
