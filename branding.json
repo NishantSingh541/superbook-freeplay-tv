@@ -18,7 +18,8 @@
   },
   "sentry": {
     "organization": "churchapps",
-    "project": "freeplay"
+    "project": "freeplay",
+    "dsn": ""
   },
   "providerIds": [
     "signpresenter",

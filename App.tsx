@@ -9,6 +9,7 @@ import { CbnAutoDownload } from "./src/helpers/CbnAutoDownload";
 import { MembershipHelper } from "./src/helpers/MembershipHelper";
 import * as Updates from "expo-updates";
 import * as Sentry from "@sentry/react-native";
+import branding from "./branding.json";
 import "./src/i18n";
 
 const PLAN_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -31,20 +32,24 @@ const CBN_AUTO_DOWNLOAD_JITTER_MS = 90 * 1000;
 // glance at the clock, not how often we hit the backend).
 const MEMBERSHIP_CHECK_POLL_MS = 5 * 60 * 1000; // every 5 minutes
 
+// Empty sentry.dsn in branding.json = Sentry fully disabled (no events, no replay).
+const SENTRY_DSN: string = (branding as any).sentry?.dsn || "";
+
 Sentry.init({
-  dsn: "https://ac7ef4e2f5095b74c8e5bc623750fefe@o4510432524107776.ingest.us.sentry.io/4510848267190272",
+  dsn: SENTRY_DSN || undefined,
+  enabled: SENTRY_DSN.length > 0,
 
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  sendDefaultPii: false, // children's app: no IP/user data
 
   // Enable Logs
   enableLogs: true,
 
   // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration()]
+  replaysSessionSampleRate: 0, // replay off until CBN decides
+  replaysOnErrorSampleRate: 0,
+  integrations: []
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
