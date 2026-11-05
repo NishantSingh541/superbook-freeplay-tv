@@ -33,6 +33,11 @@ const toMessageFile = (f: ContentFile) => ({
  *
  * Fully automatic, no confirmation — triggered by a periodic timer in
  * App.tsx and once immediately after CBN is first connected.
+ *
+ * Storage (UC-D-01): free space is checked before each download. Nothing is
+ * ever deleted to make room — if the device is full, the download is skipped
+ * for this run (no backoff penalty, retried next run) and the red storage
+ * banner tells the user. Normal UC-D-04 retention cleanup still runs.
  */
 import { ThumbnailCache } from "./ThumbnailCache";
 
@@ -42,6 +47,11 @@ const CACHE_MIGRATION_FLAG_KEY = "cache_to_documents_migrated_v1";
 const BASE_RETRY_DELAY_MS = 30 * 1000; // 30s
 const MAX_RETRY_DELAY_MS = 60 * 60 * 1000; // 1 hour ceiling
 const MAX_TRACKED_ATTEMPTS = 6; // caps how far the exponential backoff grows
+
+// UC-D-04 retention rules stay ON: schedule lessons are deleted 1 day after
+// their session date, Browse downloads after 30 days. This is the ONLY
+// automatic deletion — nothing is ever deleted because storage is full.
+const ENABLE_RETENTION_CLEANUP = true;
 
 type FailureRecord = { attempts: number; nextRetryAt: number };
 
@@ -193,7 +203,10 @@ export class CbnAutoDownload {
       }
       CachedData.pendingEntries = {};
 
-      await this.cleanupOldDownloads(schedules, today);
+      if (ENABLE_RETENTION_CLEANUP) {
+        await this.cleanupOldDownloads(schedules, today);
+      }
+      StorageManager.notifyChanged();
       console.log("[CbnAutoDownload] run complete");
     } catch (err) {
       console.error("[CbnAutoDownload] run failed:", err);
@@ -246,13 +259,18 @@ export class CbnAutoDownload {
       console.log(`[CbnAutoDownload] downloading schedule ${entry.id} (${entry.lesson_title}) — ${files.length} files`);
       CachedData.downloadingEntries[downloadKey] = { title: entry.lesson_title, image: entry.thumb, progress: 0, filesCached: 0, filesTotal: files.length };
 
-      const hasSpace = await StorageManager.ensureFreeSpace([downloadKey]);
+      // Nothing is auto-deleted: if the device is full, skip this download.
+      const hasSpace = await StorageManager.ensureFreeSpace();
       if (!hasSpace) {
-        console.warn(`[CbnAutoDownload] Insufficient storage even after eviction — skipping schedule ${entry.id} this run`);
+        console.warn(`[CbnAutoDownload] Storage full — skipping schedule ${entry.id} this run (nothing is auto-deleted)`);
         CachedData.lowStorageNotice = true;
+        StorageManager.notifyChanged();
         return; // not a failure — no backoff penalty; retried again next run once space frees up
       }
-      CachedData.lowStorageNotice = false;
+      if (CachedData.lowStorageNotice) {
+        CachedData.lowStorageNotice = false;
+        StorageManager.notifyChanged();
+      }
 
       await CachedData.prefetch(messageFiles, (cached, total) => {
         const percent = total > 0 ? Math.round((cached / total) * 100) : 0;
@@ -267,7 +285,7 @@ export class CbnAutoDownload {
         title: entry.lesson_title,
         image: entry.thumb,
         category: entry.category,
-            scheduledDate: entry.schedule_date,
+        scheduledDate: entry.schedule_date,
         messageFiles,
         downloadedAt: Date.now()
       };
@@ -275,6 +293,7 @@ export class CbnAutoDownload {
       // Keep offline copies of the thumbnails so cards still show them without internet.
       ThumbnailCache.localizeEntry(saved).then(e => DownloadIndex.addEntry(e)).catch(() => {});
       await this.clearFailure(downloadKey);
+      StorageManager.notifyChanged(); // storage banner re-checks after each new download
     } catch (err) {
       console.error(`[CbnAutoDownload] Failed to download schedule ${entry.id}:`, err);
       await this.recordFailure(downloadKey);

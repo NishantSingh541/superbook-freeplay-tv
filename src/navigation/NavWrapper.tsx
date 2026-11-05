@@ -16,6 +16,7 @@ import { getProvider } from "../providers";
 import { isLocked, lockedProviderId } from "../branding";
 import { ProviderAuthHelper } from "../helpers";
 import { FreePlayLogo } from "../components";
+import { StorageWarningBanner } from "../components/StorageWarningBanner";
 
 type Props = {
   screen: React.JSX.Element;
@@ -360,6 +361,7 @@ export const NavWrapper = (props: Props) => {
             backgroundColor: "transparent"
           }}>
           {props.screen}
+          {CachedData.currentScreen !== "player" && <StorageWarningBanner />}
         </View>
       </View>
     </View>

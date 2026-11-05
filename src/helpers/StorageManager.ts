@@ -1,12 +1,21 @@
 import RNFS from "react-native-fs";
 import * as Sentry from "@sentry/react-native";
-import { DownloadedItemInterface } from "../interfaces";
 import { DownloadIndex } from "./DownloadIndex";
 import { CachedData } from "./CachedData";
 
 const MB = 1024 * 1024;
-const LOW_SPACE_THRESHOLD_BYTES = 500 * MB;
-const EVICTION_TARGET_BYTES = 1024 * MB;
+
+// Storage alert levels (used / total device storage):
+//   below 65%  -> no alert
+//   65% - 79%  -> orange alert
+//   80% +      -> red alert, and new auto-downloads are paused
+export const STORAGE_ALERT_RATIO = 0.65;
+export const STORAGE_CRITICAL_RATIO = 0.8;
+
+// Nothing is ever auto-deleted. If free space drops below the larger of these,
+// new downloads are skipped (not failed) and the red banner explains why.
+const MIN_FREE_BYTES = 500 * MB;
+const MIN_FREE_RATIO = 0.05;
 
 export type StorageUsage = {
   totalBytes: number;
@@ -15,7 +24,33 @@ export type StorageUsage = {
   otherBytes: number;
 };
 
+export type DeviceSpace = {
+  totalBytes: number;
+  freeBytes: number;
+  usedBytes: number;
+  usedRatio: number; // 0..1
+};
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
 export class StorageManager {
+  // ---- Change notifications (used by the storage banner on every page) ----
+
+  static subscribe(listener: Listener): () => void {
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }
+
+  /** Call after anything that changes disk usage (download finished, items deleted). */
+  static notifyChanged(): void {
+    listeners.forEach(l => {
+      try { l(); } catch { /* a broken listener must not stop the others */ }
+    });
+  }
+
+  // ---- Space queries ----
+
   static async getFreeBytes(): Promise<number> {
     try {
       const info = await RNFS.getFSInfo();
@@ -23,6 +58,26 @@ export class StorageManager {
     } catch {
       return Number.POSITIVE_INFINITY;
     }
+  }
+
+  /** Lightweight total/free/used for the whole device (no per-file stat calls). */
+  static async getDeviceSpace(): Promise<DeviceSpace | null> {
+    try {
+      const info = await RNFS.getFSInfo();
+      const totalBytes = Number(info.totalSpace) || 0;
+      const freeBytes = Number(info.freeSpace) || 0;
+      if (totalBytes <= 0) return null;
+      const usedBytes = Math.max(0, totalBytes - freeBytes);
+      return { totalBytes, freeBytes, usedBytes, usedRatio: usedBytes / totalBytes };
+    } catch {
+      return null;
+    }
+  }
+
+  /** True once the device is at or above 80% of its total storage. */
+  static async isNearlyFull(): Promise<boolean> {
+    const space = await this.getDeviceSpace();
+    return !!space && space.usedRatio >= STORAGE_CRITICAL_RATIO;
   }
 
   /**
@@ -71,52 +126,36 @@ export class StorageManager {
     await DownloadIndex.replaceAll(entries);
   }
 
-  // Evict least-recently-used downloaded items until free space meets the target,
-  // or only protected entries remain. Lessons are evicted as atomic units.
-  // Returns whether free space is now above the low-space threshold — if
-  // eviction still can't clear enough room, the caller should skip the
-  // download for this run and surface a low-storage notice, per spec.
-  static async ensureFreeSpace(protectedKeys: string[] = []): Promise<boolean> {
-    const free = await this.getFreeBytes();
-    if (free >= LOW_SPACE_THRESHOLD_BYTES) return true;
+  /**
+   * Checks there is room for a new download (UC-D-01). NOTHING is deleted
+   * here to make room — downloads are only removed by the user or by the
+   * normal UC-D-04 retention rules in CbnAutoDownload.
+   *
+   * Returns false when free space is below max(500 MB, 5% of total); the
+   * caller then skips the download for this run and the red banner tells
+   * the user to free up space. The parameter is kept only so existing
+   * callers keep compiling; it is no longer used.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static async ensureFreeSpace(_protectedKeys: string[] = []): Promise<boolean> {
+    const space = await this.getDeviceSpace();
+    if (!space) return true; // can't read storage — don't block downloads on an unknown
 
-    const entries = await DownloadIndex.getAll();
-    const protectedSet = new Set(protectedKeys.filter(Boolean));
-    const candidates = entries
-      .filter(e => !protectedSet.has(e.downloadKey))
-      .sort((a, b) => this.accessTime(a) - this.accessTime(b));
-
-    if (candidates.length === 0) {
-      Sentry.addBreadcrumb({
-        category: "storage",
-        message: `Low space (${Math.round(free / MB)} MB free) but no evictable entries`,
-        level: "warning"
-      });
-      return free >= LOW_SPACE_THRESHOLD_BYTES;
+    // 80%+ used: pause new downloads until the user deletes some. Nothing is auto-deleted.
+    if (space.usedRatio >= STORAGE_CRITICAL_RATIO) {
+      console.warn(`[StorageManager] Storage ${Math.round(space.usedRatio * 100)}% full — new downloads paused until space is freed`);
+      return false;
     }
 
-    let currentFree = free;
-    let removed = 0;
-    for (const entry of candidates) {
-      if (currentFree >= EVICTION_TARGET_BYTES) break;
-      const reclaimed = await DownloadIndex.deleteFiles(entry);
-      await DownloadIndex.removeEntry(entry.downloadKey);
-      currentFree += reclaimed;
-      removed++;
-    }
+    const minFree = Math.max(MIN_FREE_BYTES, space.totalBytes * MIN_FREE_RATIO);
+    if (space.freeBytes >= minFree) return true;
 
-    if (removed > 0) {
-      Sentry.addBreadcrumb({
-        category: "storage",
-        message: `Evicted ${removed} cached items (${Math.round(currentFree / MB)} MB free)`,
-        level: "info"
-      });
-    }
-
-    return currentFree >= LOW_SPACE_THRESHOLD_BYTES;
-  }
-
-  private static accessTime(entry: DownloadedItemInterface): number {
-    return entry.lastAccessedAt ?? entry.downloadedAt ?? 0;
+    console.warn(`[StorageManager] Not enough space for new downloads (${Math.round(space.freeBytes / MB)} MB free) — nothing is auto-deleted`);
+    Sentry.addBreadcrumb({
+      category: "storage",
+      message: `Download skipped: ${Math.round(space.freeBytes / MB)} MB free`,
+      level: "warning"
+    });
+    return false;
   }
 }
