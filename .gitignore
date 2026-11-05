@@ -27,3 +27,4 @@ npm-debug.*
 .env
 package-lock.json
 credentials.json
+builds/
