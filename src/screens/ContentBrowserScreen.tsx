@@ -28,6 +28,12 @@ import { decodeEntities } from "../helpers/TextHelper";
 
 const cardNodes: Record<string, any> = {};
 import { getProvider } from "../providers";
+
+// Display-only rename: the server's category is still named "K-6" (term 454),
+// but it is shown to users as "Primary School". Image matching and navigation
+// keep using the original title, so only the on-screen text changes.
+const displayTitle = (title?: string) => (title && title.trim() === "K-6" ? "Primary School" : title ?? "");
+
 const K6_TILE_IMAGE = require("../images/k6-tile.png");
 const PRESCHOOL_TILE_IMAGE = require("../images/preschool-tile.png");
 
@@ -184,7 +190,7 @@ export const ContentBrowserScreen = (props: Props) => {
       if (version !== requestVersionRef.current) return;
 
       if (folder.isLeaf) {
-        console.log(`[ContentBrowser] handleSelectFolder: leaf folder "${folder.title}" path=${folder.path}`);
+        console.log(`[ContentBrowser] handleSelectFolder: leaf folder "${displayTitle(folder.title)}" path=${folder.path}`);
         const files = provider.getPlaylist ? await provider.getPlaylist(folder.path, auth) : null;
         console.log(`[ContentBrowser] handleSelectFolder: getPlaylist returned ${files ? files.length + " files" : "null"}`);
         if (version !== requestVersionRef.current) return;
@@ -200,7 +206,7 @@ export const ContentBrowserScreen = (props: Props) => {
             folderStack: [...folderStack, withLessonNumber(folder, index)]
           });
         } else {
-          console.warn(`[ContentBrowser] handleSelectFolder: no files for leaf "${folder.title}" — showing empty state`);
+          console.warn(`[ContentBrowser] handleSelectFolder: no files for leaf "${displayTitle(folder.title)}" — showing empty state`);
           props.navigateTo("contentBrowser", {
             providerId: props.providerId,
             folderStack: [...folderStack, withLessonNumber(folder, index)]
@@ -383,7 +389,7 @@ export const ContentBrowserScreen = (props: Props) => {
                 }}
                 numberOfLines={2}
                 ellipsizeMode="tail">
-                {folder.title}
+                {displayTitle(folder.title)}
               </Text>
             </View>
           )}
@@ -397,7 +403,7 @@ export const ContentBrowserScreen = (props: Props) => {
                   textAlign: "center"
                 }}
                 numberOfLines={2}>
-                {folder.title}
+                {displayTitle(folder.title)}
               </Text>
               {folderStack.length === 2 && (
                 <Text
@@ -639,10 +645,10 @@ export const ContentBrowserScreen = (props: Props) => {
   // request — sub-folder screens still show their own titles below.
   let headerText = t("contentBrowser.browseAllLessons", "Browse All Lessons");
   if (currentFolder) {
-    headerText = currentFolder.title;
+    headerText = displayTitle(currentFolder.title);
   }
 
-  const breadcrumbs = [provider?.name || t("contentBrowser.header"), ...folderStack.map(f => f.title)];
+  const breadcrumbs = [provider?.name || t("contentBrowser.header"), ...folderStack.map(f => displayTitle(f.title))];
 
   return (
     <View style={{ ...Styles.menuScreen }} testID={`content-browser-root-${currentFolder?.id || "root"}`}>

@@ -594,13 +594,6 @@ export const CbnTodayScreen = (props: Props) => {
             numberOfLines={1}>
             {curriculumLabel}
           </Text>
-          {lesson?.scheduledDate ? (
-            <Text
-              style={{ color: "rgba(255,255,255,0.6)", fontSize: DimensionHelper.wp("1.1%"), marginTop: 2, textAlign: "center" }}
-              numberOfLines={1}>
-              {t("cbnToday.scheduledFor", "Scheduled {{date}}", { date: formatScheduleDate(lesson.scheduledDate, "short") })}
-            </Text>
-          ) : null}
           {!lesson && (
             <Text
               style={{ color: "rgba(255,255,255,0.4)", fontSize: DimensionHelper.wp("1%"), marginTop: DimensionHelper.hp("0.5%"), textAlign: "center", paddingHorizontal: DimensionHelper.wp("1%") }}>
@@ -624,7 +617,7 @@ export const CbnTodayScreen = (props: Props) => {
           {categoryTile(
             "primary",
             t("cbnToday.k6Brand", "Superbook Academy"),
-            t("cbnToday.k6Curriculum", "K-6 Curriculum"),
+            t("cbnToday.k6Curriculum", "Primary School Curriculum"),
             K6_ROBOT_IMAGE,
             primary,
             () => primary && handleSelectLesson(primary),
