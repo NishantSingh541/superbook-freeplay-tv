@@ -89,8 +89,14 @@ export class DownloadIndex {
 
   static async deleteFiles(entry: DownloadedItemInterface): Promise<number> {
     let bytesReclaimed = 0;
+    // Videos can be shared between lessons (e.g. "The Salvation Poem" is in every
+    // lesson). Never delete a file that another downloaded lesson still uses.
+    const others = (await this.getAll()).filter(e => e.downloadKey !== entry.downloadKey);
+    const stillUsed = new Set<string>();
+    for (const o of others) for (const f of o.messageFiles) if (f.url) stillUsed.add(f.url);
     for (const f of entry.messageFiles) {
       if (!f.url || f.url.trim() === "") continue;
+      if (stillUsed.has(f.url)) continue; // shared with another downloaded lesson — keep it
       const fullPath = decodeURIComponent(CachedData.getFilePath(f.url));
       try {
         const stat = await RNFS.stat(fullPath);
