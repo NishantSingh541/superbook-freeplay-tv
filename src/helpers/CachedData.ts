@@ -111,6 +111,10 @@ export class CachedData {
     }
   }
 
+  // How many videos of the SAME lesson download at the same time.
+  // Lessons themselves still download one after another (UC-D-01).
+  static readonly PARALLEL_DOWNLOADS = 2;
+
   static async prefetch(
     files: MessageFileInterface[],
     changeCallback: (cached: number, total: number) => void,
@@ -119,41 +123,66 @@ export class CachedData {
     this.cachedItems = 0;
     this.downloadedBytes = 0;
     this.totalBytes = 0;
-    let i = 0;
     this.totalCachableItems = files.length;
     changeCallback(this.cachedItems, this.totalCachableItems);
+    if (fileProgressCallback) fileProgressCallback(0);
 
-    for (const f of files) {
-      try {
-        // Reset file progress at start of each file
-        if (fileProgressCallback) fileProgressCallback(0);
-
-        // Skip files with invalid URLs
-        if (!f.url || f.url.trim() === "") {
-          console.log("Skipping file with empty URL");
-          i++;
-          this.cachedItems = i;
-          changeCallback(this.cachedItems, this.totalCachableItems);
-          continue;
-        }
-        await this.load(f, fileProgressCallback);
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        console.log("Download Failed: " + errorMessage);
-
-        // Only log non-abort errors to Sentry (aborts are expected during navigation)
-        if (!errorMessage.includes("abort") && !errorMessage.includes("cancelled")) {
-          Sentry.addBreadcrumb({
-            category: "download",
-            message: `Download failed for ${f.url}: ${errorMessage}`,
-            level: "warning"
-          });
-        }
+    // Progress is reported for the whole lesson (0..1), combining all videos
+    // that are downloading at the same time, so the bar moves smoothly.
+    const fileProgress: number[] = new Array(files.length).fill(0);
+    let lastReported = -1;
+    const reportProgress = () => {
+      if (!fileProgressCallback || files.length === 0) return;
+      const overall = fileProgress.reduce((sum, v) => sum + v, 0) / files.length;
+      if (overall - lastReported >= 0.01 || overall >= 1) {
+        lastReported = overall;
+        fileProgressCallback(overall);
       }
-      i++;
-      this.cachedItems = i;
+    };
+    const markDone = (index: number) => {
+      fileProgress[index] = 1;
+      this.cachedItems++;
       changeCallback(this.cachedItems, this.totalCachableItems);
-    }
+      reportProgress();
+    };
+
+    const seenUrls = new Set<string>();
+    let next = 0;
+    const worker = async () => {
+      while (next < files.length) {
+        const index = next++;
+        const f = files[index];
+        try {
+          if (!f.url || f.url.trim() === "") {
+            console.log("Skipping file with empty URL");
+          } else if (seenUrls.has(f.url)) {
+            // Same video listed twice in this lesson: already handled by another download.
+          } else {
+            seenUrls.add(f.url);
+            await this.load(f, (p) => {
+              fileProgress[index] = Math.min(Math.max(p, 0), 1);
+              reportProgress();
+            });
+          }
+        } catch (e) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          console.log("Download Failed: " + errorMessage);
+
+          // Only log non-abort errors to Sentry (aborts are expected during navigation)
+          if (!errorMessage.includes("abort") && !errorMessage.includes("cancelled")) {
+            Sentry.addBreadcrumb({
+              category: "download",
+              message: `Download failed for ${f.url}: ${errorMessage}`,
+              level: "warning"
+            });
+          }
+        }
+        markDone(index);
+      }
+    };
+
+    const workerCount = Math.max(1, Math.min(this.PARALLEL_DOWNLOADS, files.length));
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
   }
 
   static getFilePath(url: string) {
@@ -261,22 +290,47 @@ export class CachedData {
       console.log("mkdir warning:", mkdirError);
     }
 
+    // Download to a temporary ".part" file and only rename it to the real name
+    // once it is complete. An interrupted download (TV off, Wi-Fi drop, app
+    // closed) then never leaves a half-written video that looks "downloaded".
+    const tempPath = diskPath + ".part";
+    try {
+      if (await RNFS.exists(tempPath)) await RNFS.unlink(tempPath);
+    } catch { /* ignore */ }
+
     const downloadResponse = RNFS.downloadFile({
       fromUrl: file.url,
-      toFile: diskPath,
+      toFile: tempPath,
       progress: (res) => {
         // Report current file progress as a ratio (0 to 1)
         if (res.contentLength > 0 && fileProgressCallback) {
           fileProgressCallback(res.bytesWritten / res.contentLength);
         }
       },
-      progressDivider: 1 // Report progress frequently
-    });
+      progressDivider: 1,
+      progressInterval: 250,      // at most 4 updates/sec per file
+      connectionTimeout: 30000,   // give up connecting after 30s (retried later with backoff)
+      readTimeout: 60000          // give up if no data arrives for 60s
+    } as any);
 
-    const result = await downloadResponse.promise;
+    let result;
+    try {
+      result = await downloadResponse.promise;
+    } catch (e) {
+      try { await RNFS.unlink(tempPath); } catch { /* ignore */ }
+      throw e;
+    }
     if (result.statusCode !== 200) {
+      try { await RNFS.unlink(tempPath); } catch { /* ignore */ }
       throw new Error(`Download failed with status ${result.statusCode}`);
     }
+
+    // Another lesson may have finished the same shared video meanwhile.
+    if (await RNFS.exists(diskPath)) {
+      try { await RNFS.unlink(tempPath); } catch { /* ignore */ }
+      return;
+    }
+    await RNFS.moveFile(tempPath, diskPath);
   }
 
   static async allFilesCached(files: MessageFileInterface[]): Promise<boolean> {
