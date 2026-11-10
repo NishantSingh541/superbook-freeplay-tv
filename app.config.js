@@ -65,7 +65,12 @@ const buildPlugins = () => [
   [
     "expo-build-properties",
     {
-      ios: { useFrameworks: "static" }
+      ios: { useFrameworks: "static" },
+      android: {
+        // Remove unused code and resources from release builds (smaller TV download).
+        enableMinifyInReleaseBuilds: true,
+        enableShrinkResourcesInReleaseBuilds: true
+      }
     }
   ],
   "./plugins/withSoundAssets",
@@ -88,7 +93,14 @@ module.exports = () => {
     newArchEnabled: true,
     plugins: isTvBuild ? getTvSafePlugins(plugins) : plugins,
     android: {
-      package: branding.android.package,
+      blockedPermissions: [
+        // Kids' app (COPPA / Google Play Families): never request the advertising ID.
+        "com.google.android.gms.permission.AD_ID",
+        "android.permission.ACCESS_ADSERVICES_AD_ID",
+        "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+        "android.permission.ACCESS_ADSERVICES_TOPICS"
+      ],
+            package: branding.android.package,
       googleServicesFile: "./google-services.json",
       versionCode: branding.android.versionCode,
       permissions: [
