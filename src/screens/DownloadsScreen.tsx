@@ -126,7 +126,36 @@ export const DownloadsScreen = (props: Props) => {
     if (pickerEntry?.downloadKey === entry.downloadKey) setPickerEntry(null);
   };
 
+  // A current/upcoming scheduled lesson is downloaded again automatically by
+  // the auto-download, so deleting it only helps if auto-download is turned off.
+  const isScheduledLesson = (entry: DownloadedItemInterface) => {
+    if (entry.source !== "cbn-schedule") return false;
+    if ((CachedData.scheduledDownloadKeys || []).includes(entry.downloadKey)) return true;
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return !!entry.scheduledDate && entry.scheduledDate >= today;
+  };
+
   const confirmDelete = (entry: DownloadedItemInterface) => {
+    if (!isScheduledLesson(entry)) {
+      confirmDeleteNormal(entry);
+      return;
+    }
+    Alert.alert(
+      t("downloads.scheduledDeleteTitle", "This lesson is currently scheduled"),
+      t(
+        "downloads.scheduledDeleteMessage",
+        "This lesson is scheduled for your group, so the app will download it again automatically. To stop that, turn off Auto-Download Today's Lesson in Account first. Delete it anyway?"
+      ),
+      [
+        { text: t("downloads.scheduledDeleteNo", "No"), style: "cancel" },
+        { text: t("downloads.scheduledDeleteYes", "Yes, delete"), style: "destructive", onPress: () => handleDelete(entry) }
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const confirmDeleteNormal = (entry: DownloadedItemInterface) => {
     Alert.alert(
       t("downloads.deleteConfirmTitle", "Delete Download?"),
       t("downloads.deleteConfirmMessage", `This will remove "${entry.title || ""}" and all its videos from this device.`),

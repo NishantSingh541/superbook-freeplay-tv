@@ -2,7 +2,7 @@
 # Build the EMULATOR test app (x86 only), install it and open it.
 set -euo pipefail
 cd "$(dirname "$0")"
-export SENTRY_DISABLE_AUTO_UPLOAD=true EXPO_TV=1
+export SENTRY_DISABLE_AUTO_UPLOAD=true EXPO_TV=1 NODE_ENV=production
 
 rm -rf android/app/build/generated/assets/createBundleReleaseJsAndAssets android/app/build/intermediates/assets
 (cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86)

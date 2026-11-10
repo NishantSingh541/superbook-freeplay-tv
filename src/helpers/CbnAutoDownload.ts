@@ -176,6 +176,7 @@ export class CbnAutoDownload {
         .sort((a, b) => (a.schedule_date > b.schedule_date ? -1 : 1)); // most recent first
 
       const ordered = [...current, ...upcoming];
+      CachedData.scheduledDownloadKeys = ordered.map(e => DownloadIndex.generateKey("cbn-schedule", { scheduleId: String(e.id) }));
       console.log(
         `[CbnAutoDownload] ${ordered.length} entries queued for download ` +
         `(${current.length} current, ${upcoming.length} upcoming, ${past.length} past — skipped)`

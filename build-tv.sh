@@ -4,7 +4,7 @@
 #   - .apk  -> install directly on a real Android TV for testing
 set -euo pipefail
 cd "$(dirname "$0")"
-export SENTRY_DISABLE_AUTO_UPLOAD=true EXPO_TV=1
+export SENTRY_DISABLE_AUTO_UPLOAD=true EXPO_TV=1 NODE_ENV=production
 ARCHS="armeabi-v7a,arm64-v8a"
 
 rm -rf android/app/build/generated/assets/createBundleReleaseJsAndAssets android/app/build/intermediates/assets

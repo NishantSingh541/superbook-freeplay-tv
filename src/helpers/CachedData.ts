@@ -33,6 +33,8 @@ export class CachedData {
   static downloadingEntries: Record<string, { title: string; image?: string; progress: number; filesCached?: number; filesTotal?: number }> = {};
   static pendingEntries: Record<string, { title: string; image?: string }> = {};
   static lowStorageNotice: boolean = false;
+  // Download keys of the current + upcoming scheduled lessons (set by CbnAutoDownload).
+  static scheduledDownloadKeys: string[] = [];
   // UC-D-03: defaults true (active) so a fresh install isn't wrongly
   // blocked before the first real membership check has completed.
   static membershipActive: boolean = true;
