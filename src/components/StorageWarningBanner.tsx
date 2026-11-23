@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
+import * as RN from "react-native";
 import { AppState, Text, TouchableOpacity, View } from "react-native";
+
+// TVFocusGuideView (react-native-tvos) catches remote focus moving DOWN into the banner from any
+// screen (Downloads grid, Browse, Today's Lesson) and sends it to the X button. Falls back to a
+// plain View where it isn't available.
+const FocusGuide: any = (RN as any).TVFocusGuideView ?? View;
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useTranslation } from "react-i18next";
 import { DimensionHelper } from "../helpers/DimensionHelper";
@@ -7,7 +13,7 @@ import { CachedData } from "../helpers/CachedData";
 import { StorageManager, STORAGE_ALERT_RATIO, STORAGE_CRITICAL_RATIO } from "../helpers/StorageManager";
 
 const CHECK_INTERVAL_MS = 60 * 1000;
-const DISMISS_DURATION_MS = 60 * 1000; // hidden for 1 hour after the user presses X
+const DISMISS_DURATION_MS = 60 * 60 * 1000; // hidden for 1 hour after the user presses X
 const DISMISS_KEY = "storage_banner_dismissed";
 const GB = 1024 * 1024 * 1024;
 const toGb = (bytes: number) => (bytes / GB).toFixed(1);
@@ -42,6 +48,7 @@ export const StorageWarningBanner = () => {
   const { t } = useTranslation();
   const [state, setState] = useState<BannerState>({ kind: "none" });
   const [closeFocused, setCloseFocused] = useState(false);
+  const [closeNode, setCloseNode] = useState<any>(null);
 
   const check = useCallback(async () => {
     const space = await StorageManager.getDeviceSpace();
@@ -104,13 +111,20 @@ export const StorageWarningBanner = () => {
   const closeSize = DimensionHelper.hp("6%");
 
   return (
-    <View
+    <FocusGuide
+      destinations={closeNode ? [closeNode] : []}
       pointerEvents="box-none"
       style={{
         position: "absolute",
         left: DimensionHelper.wp("2%"),
         right: DimensionHelper.wp("2%"),
         bottom: DimensionHelper.hp("3%"),
+        zIndex: 1000,
+        elevation: 10
+      }}>
+    <View
+      pointerEvents="box-none"
+      style={{
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: DimensionHelper.hp("1.4%"),
@@ -118,9 +132,7 @@ export const StorageWarningBanner = () => {
         borderRadius: 12,
         borderWidth: 2,
         borderColor: color,
-        backgroundColor: "rgba(15, 20, 30, 0.95)",
-        zIndex: 1000,
-        elevation: 10
+        backgroundColor: "rgba(15, 20, 30, 0.95)"
       }}>
       <Icon
         name={icon}
@@ -140,6 +152,7 @@ export const StorageWarningBanner = () => {
       {/* Close (X): reachable with the remote (D-pad down/right, then OK) or by touch/mouse. */}
       <TouchableOpacity
         testID="storage-banner-close"
+        ref={setCloseNode}
         accessibilityRole="button"
         accessibilityLabel={t("storage.dismiss", "Hide storage alert for 1 hour")}
         activeOpacity={0.8}
@@ -165,5 +178,6 @@ export const StorageWarningBanner = () => {
         />
       </TouchableOpacity>
     </View>
+    </FocusGuide>
   );
 };

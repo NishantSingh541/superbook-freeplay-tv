@@ -17,6 +17,7 @@ import { isLocked, lockedProviderId } from "../branding";
 import { ProviderAuthHelper } from "../helpers";
 import { FreePlayLogo } from "../components";
 import { StorageWarningBanner } from "../components/StorageWarningBanner";
+import { ScheduledLessonDialogHost } from "../components/ScheduledLessonDialog";
 
 type Props = {
   screen: React.JSX.Element;
@@ -37,6 +38,8 @@ export const NavWrapper = (props: Props) => {
   const sidebarMounted = useRef(false);
   const lastScreenRef = useRef(CachedData.currentScreen);
   const lastLeftAtRef = useRef(0);
+  // Time of the last D-pad LEFT press. The sidebar only opens from focus if LEFT was just pressed.
+  const lastLeftPressAtRef = useRef(0);
 
   const fullScreenModeScreens = ["planDownload"];
   const isFullScreenMode = fullScreenModeScreens.includes(CachedData.currentScreen);
@@ -90,7 +93,9 @@ export const NavWrapper = (props: Props) => {
     if (state && (
       recentlyCollapsed.current ||
       CachedData.preventSidebarExpand ||
-      CachedData.currentScreen === "contentBrowser"
+      CachedData.currentScreen === "contentBrowser" ||
+      // Focus landed on the sidebar by itself (e.g. a screen is still loading): don't open it.
+      Date.now() - lastLeftPressAtRef.current > 1500
     )) return;
     props.sidebarState(state);
   };
@@ -111,6 +116,7 @@ export const NavWrapper = (props: Props) => {
     }
     // Explicitly handle LEFT navigation to open sidebar
     if (isLeft) {
+      lastLeftPressAtRef.current = Date.now();
       console.log(`[TVEvent] left action=${evt && evt.eventKeyAction} cardFocused=${CachedData.cardFocused} leftEdge=${CachedData.cardAtLeftEdge}`);
     }
     if (isLeft && !props.sidebarExpanded) {
@@ -362,6 +368,7 @@ export const NavWrapper = (props: Props) => {
           }}>
           {props.screen}
           {CachedData.currentScreen !== "player" && <StorageWarningBanner />}
+          <ScheduledLessonDialogHost />
         </View>
       </View>
     </View>

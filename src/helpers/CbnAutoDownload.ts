@@ -1,3 +1,4 @@
+import RNFS from "react-native-fs";
 import { CachedData } from "./CachedData";
 import { ProviderAuthHelper } from "./ProviderAuthHelper";
 import { ProviderSettingsHelper } from "./ProviderSettingsHelper";
@@ -273,12 +274,39 @@ export class CbnAutoDownload {
         StorageManager.notifyChanged();
       }
 
-      await CachedData.prefetch(messageFiles, (cached, total) => {
-        const percent = total > 0 ? Math.round((cached / total) * 100) : 0;
-        CachedData.downloadingEntries[downloadKey] = { title: entry.lesson_title, image: entry.thumb, progress: percent, filesCached: cached, filesTotal: total };
-      });
+      // Progress rises smoothly (byte by byte across all videos), never jumps per finished video,
+      // and never goes backwards.
+      const startedAt = Date.now();
+      let filesDone = 0;
+      const setProgress = (percent: number, cached: number, total: number) => {
+        const prev = CachedData.downloadingEntries[downloadKey];
+        CachedData.downloadingEntries[downloadKey] = {
+          title: entry.lesson_title,
+          image: entry.thumb,
+          progress: Math.min(100, Math.max(prev?.progress ?? 0, percent)),
+          filesCached: cached,
+          filesTotal: total
+        };
+      };
+      await CachedData.prefetch(
+        messageFiles,
+        (cached, total) => {
+          filesDone = cached;
+          setProgress(total > 0 ? Math.round((cached / total) * 100) : 0, cached, total);
+        },
+        (overall) => setProgress(Math.round(overall * 100), filesDone, files.length)
+      );
       delete CachedData.downloadingEntries[downloadKey];
       console.log(`[CbnAutoDownload] finished downloading schedule ${entry.id}`);
+      try {
+        let bytes = 0;
+        for (const f of messageFiles) {
+          if (!f.url) continue;
+          try { bytes += Number((await RNFS.stat(decodeURIComponent(CachedData.getFilePath(f.url)))).size) || 0; } catch { /* skip */ }
+        }
+        const secs = Math.max(1, (Date.now() - startedAt) / 1000);
+        console.log(`[CbnAutoDownload] speed: schedule ${entry.id} ${(bytes / 1048576).toFixed(0)} MB in ${secs.toFixed(0)}s = ${((bytes * 8) / secs / 1e6).toFixed(1)} Mbps`);
+      } catch { /* logging only */ }
       const saved: Parameters<typeof DownloadIndex.addEntry>[0] = {
         downloadKey,
         source: "cbn-schedule",

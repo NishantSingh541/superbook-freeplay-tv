@@ -115,7 +115,7 @@ export class CachedData {
 
   // How many videos of the SAME lesson download at the same time.
   // Lessons themselves still download one after another (UC-D-01).
-  static readonly PARALLEL_DOWNLOADS = 2;
+  static readonly PARALLEL_DOWNLOADS = 4;
 
   static async prefetch(
     files: MessageFileInterface[],

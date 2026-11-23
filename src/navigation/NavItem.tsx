@@ -112,7 +112,8 @@ export const NavItem = React.forwardRef((props: Props, ref) => {
         alignSelf: "stretch",
         transform: [{ scale: isFocused ? 1.05 : 1 }]
       }}
-      hasTVPreferredFocus={isInitialMount.current && props.expanded && props.selected}
+      // Every time the sidebar opens, focus lands on the active menu item (e.g. Account).
+      hasTVPreferredFocus={props.expanded && props.selected}
       onFocus={() => {
         setIsFocused(true);
         handleFocusChange(true);
