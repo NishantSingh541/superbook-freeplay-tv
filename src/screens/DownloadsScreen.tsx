@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { ScheduledLessonDialog } from "../components/ScheduledLessonDialog";
 import { Alert, Image, View, Text, FlatList, TouchableHighlight, BackHandler } from "react-native";
 import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
@@ -106,7 +107,7 @@ export const DownloadsScreen = (props: Props) => {
       }
     };
     poll();
-    const interval = setInterval(poll, 1500);
+    const interval = setInterval(poll, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -141,6 +142,7 @@ export const DownloadsScreen = (props: Props) => {
       confirmDeleteNormal(entry);
       return;
     }
+    if (ScheduledLessonDialog.show({ title: entry.title, onDelete: () => handleDelete(entry) })) return;
     Alert.alert(
       t("downloads.scheduledDeleteTitle", "This lesson is currently scheduled"),
       t(

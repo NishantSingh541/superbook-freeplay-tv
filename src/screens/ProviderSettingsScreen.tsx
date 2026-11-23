@@ -1,4 +1,6 @@
 import { useState as useStateM, useEffect as useEffectM } from "react";
+import { AccountDetailsCard } from "../components/AccountDetailsCard";
+import { AccountInfoHelper } from "../helpers/AccountInfoHelper";
 import { MembershipHelper } from "../helpers/MembershipHelper";
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableHighlight, BackHandler, Image } from "react-native";
@@ -99,6 +101,7 @@ export const ProviderSettingsScreen = (props: Props) => {
       await CachedData.setAsyncStorage("cbn_last_identity", null);
       CachedData.pendingEntries = {};
       CachedData.membershipActive = true;
+      AccountInfoHelper.clear();
       await CachedData.setAsyncStorage("cbn_membership_active", true);
       await CachedData.setAsyncStorage("cbn_membership_last_check", 0);
     }
@@ -228,6 +231,9 @@ export const ProviderSettingsScreen = (props: Props) => {
     const otherPct = (usage.otherBytes / usage.totalBytes) * 100;
     const freePct = Math.max(0, 100 - downloadsPct - otherPct);
     const isLow = usage.freeBytes < LOW_SPACE_ALERT_BYTES;
+    // Size printed on the box, rounded up the way Android's Settings does
+    // (e.g. 4.8 GB available to apps -> "8 GB" device). Android itself uses the rest.
+    const deviceGb = Math.pow(2, Math.ceil(Math.log2(Math.max(1, usage.totalBytes / 1e9))));
 
     const legendItem = (color: string, label: string, bytes: number) => (
       <View style={{ flexDirection: "row", alignItems: "center", marginRight: DimensionHelper.wp("2%"), marginTop: DimensionHelper.hp("0.8%") }}>
@@ -251,6 +257,9 @@ export const ProviderSettingsScreen = (props: Props) => {
             {formatBytes(usage.totalBytes - usage.freeBytes)} {t("providerSettings.storage.of", "of")} {formatBytes(usage.totalBytes)} {t("providerSettings.storage.used", "used")}
           </Text>
         </View>
+        <Text style={{ color: Colors.textSubtle, fontSize: Typography.bodySmall, marginTop: -DimensionHelper.hp("0.5%"), marginBottom: DimensionHelper.hp("1%") }}>
+          {t("providerSettings.storage.deviceSize", "{{device}} device · {{usable}} available for apps", { device: `${deviceGb} GB`, usable: formatBytes(usage.totalBytes) })}
+        </Text>
 
         <View style={{ flexDirection: "row", height: 14, borderRadius: 7, overflow: "hidden", backgroundColor: Colors.progressBackground }}>
           <View style={{ width: `${downloadsPct}%`, backgroundColor: Colors.primary }} />
@@ -293,7 +302,9 @@ export const ProviderSettingsScreen = (props: Props) => {
       </View>
       <View style={{ ...Styles.menuWrapper, flex: 1, padding: DimensionHelper.wp("2%") }}>
         {renderStorageSection()}
-        {renderAccountStatus()}
+        <AccountDetailsCard providerId={props.providerId} membershipActive={membershipActive} />
+        {/* Lapsed accounts keep the original status card (with its guidance) below. */}
+        {!membershipActive && renderAccountStatus()}
         {supportsAutoDownload && renderToggleRow(
           "autoDownload",
           t("providerSettings.autoDownload.label"),

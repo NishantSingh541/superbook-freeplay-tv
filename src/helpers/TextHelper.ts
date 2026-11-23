@@ -35,3 +35,18 @@ export const formatScheduleDate = (ymd?: string | null, style: "short" | "long" 
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   return d.toLocaleDateString(undefined, { month: style === "long" ? "long" : "short", day: "numeric", year: "numeric" });
 };
+
+/** "2027-01-23" -> "23rd January, 2027". Parsed by hand so no timezone shifts the day. */
+export const formatLongDate = (ymd?: string | null): string => {
+  if (!ymd) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ymd);
+  if (!m) return "";
+  const day = Number(m[3]);
+  const month = Number(m[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return "";
+  const names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const v = day % 100;
+  const last = day % 10;
+  const suffix = v >= 11 && v <= 13 ? "th" : last === 1 ? "st" : last === 2 ? "nd" : last === 3 ? "rd" : "th";
+  return `${day}${suffix} ${names[month - 1]}, ${m[1]}`;
+};
