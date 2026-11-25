@@ -1,7 +1,7 @@
 import { CachedData } from "./CachedData";
 import { ProviderAuthHelper } from "./ProviderAuthHelper";
 
-const API_BASE = "https://sbamemberdev.wpenginepowered.com/wp-json/superbook/v1";
+const API_BASE = "https://learn.superbookacademy.com/wp-json/superbook/v1";
 const LAST_CHECK_KEY = "cbn_membership_last_check";
 const STATUS_KEY = "cbn_membership_active";
 const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
